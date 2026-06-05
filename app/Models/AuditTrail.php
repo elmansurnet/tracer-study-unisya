@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AuditTrail extends Model
 {
-    use HasUuids;
+    use HasUlids;
 
-    public const UPDATED_AT = null; // Hanya created_at
+    public $timestamps = false;
 
     protected $fillable = [
+        'id',
         'user_id',
         'user_type',
         'event',
@@ -23,18 +25,31 @@ class AuditTrail extends Model
         'url',
         'ip_address',
         'user_agent',
+        'created_at',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'old_values'  => 'array',
+        'new_values'  => 'array',
+        'created_at'  => 'datetime',
+    ];
+
+    protected static function booting(): void
     {
-        return [
-            'old_values' => 'array',
-            'new_values' => 'array',
-        ];
+        static::creating(function ($model) {
+            $model->created_at = now();
+        });
     }
+
+    // ─── Relations ───────────────────────────────────────────────────────────
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function auditable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }

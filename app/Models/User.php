@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,30 +13,24 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasUlids, SoftDeletes;
 
-    /**
-     * Mass-assignable fields.
-     *
-     * CATATAN KEAMANAN:
-     * - 'role' disertakan agar seeder/factory dapat mengisi field ini.
-     *   Di production, field ini TIDAK boleh diisi langsung dari request user.
-     *   Selalu gunakan forceFill() atau assignment eksplisit di Service/Controller.
-     * - 'password' tidak perlu di sini karena sudah di-cast 'hashed'.
-     * - 'last_login_at' dan 'last_login_ip' diisi via forceFill() di AuthService,
-     *   namun tetap didaftarkan agar tidak tertolak saat Unit Test / seeder.
-     */
     protected $fillable = [
+        'id',
         'name',
         'email',
+        'email_verified_at',
         'password',
         'phone',
+        'phone_verified_at',
         'role',
         'is_active',
         'last_login_at',
         'last_login_ip',
-        'email_verified_at',
-        'phone_verified_at',
+        'remember_token',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $hidden = [
@@ -43,29 +38,18 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'phone_verified_at' => 'datetime',
-            'last_login_at'     => 'datetime',
-            'is_active'         => 'boolean',
-            'password'          => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
+        'last_login_at'     => 'datetime',
+        'is_active'         => 'boolean',
+        'password'          => 'hashed',
+        'created_at'        => 'datetime',
+        'updated_at'        => 'datetime',
+        'deleted_at'        => 'datetime',
+    ];
 
-    // -------------------------------------------------------------------------
-    // Relationships
-    // -------------------------------------------------------------------------
-
-    public function alumni(): HasOne
-    {
-        return $this->hasOne(Alumni::class, 'user_id');
-    }
-
-    // -------------------------------------------------------------------------
-    // Helper Methods
-    // -------------------------------------------------------------------------
+    // ─── Role Helpers ────────────────────────────────────────────────────────
 
     public function isSuperAdmin(): bool
     {
@@ -82,13 +66,37 @@ class User extends Authenticatable
         return (bool) $this->is_active;
     }
 
-    public function canAccessAdminPanel(): bool
+    // ─── Relations ───────────────────────────────────────────────────────────
+
+    public function alumni(): HasOne
     {
-        return $this->isSuperAdmin() && $this->isActive();
+        return $this->hasOne(Alumni::class, 'user_id');
     }
 
-    public function canAccessAlumniPanel(): bool
+    public function creator(): BelongsTo
     {
-        return $this->isAlumni() && $this->isActive();
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function deleter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    // ─── Scopes ──────────────────────────────────────────────────────────────
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', 1);
+    }
+
+    public function scopeAlumni($query)
+    {
+        return $query->where('role', 'alumni');
     }
 }
