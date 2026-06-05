@@ -1,6 +1,6 @@
 # 08_PHASE_TRACKER.md — Pelacak Fase Pengembangan Tracer Study UNISYA
 
-**Versi:** 1.0.8
+**Versi:** 1.0.9
 **Tanggal Dibuat:** 2026-06-05
 **Institusi:** Universitas Islam Syarifuddin (UNISYA)
 **Metodologi:** Phase-based Development (9 Phase × 3 Session)
@@ -31,8 +31,8 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 | Item | Detail |
 |------|--------|
 | **Phase Aktif** | Phase 1 — Fondasi Sistem |
-| **Sesi Aktif** | Session 1C — Layout Utama & Routing |
-| **Total Progress** | 7.41% (2 / 27 sesi) |
+| **Sesi Aktif** | Session 1C — Frontend Foundation & Auth Bootstrap |
+| **Total Progress** | 7.41% (2 / 27 sesi selesai, 1 in progress) |
 | **Terakhir Diperbarui** | 2026-06-05 |
 | **Lingkungan** | Development |
 
@@ -42,7 +42,7 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 
 | Phase | Nama | Total Sesi | Selesai | Status |
 |-------|------|-----------|---------|--------|
-| Phase 1 | Fondasi Sistem | 3 | 2 | 🟨 In Progress |
+| Phase 1 | Fondasi Sistem | 3 | 2 | 🟨 In Progress (1C aktif) |
 | Phase 2 | Data Master | 3 | 0 | ⬜ Belum Dimulai |
 | Phase 3 | Manajemen Alumni | 3 | 0 | ⬜ Belum Dimulai |
 | Phase 4 | Mesin Kuesioner | 3 | 0 | ⬜ Belum Dimulai |
@@ -63,7 +63,7 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 
 ### SESSION 1A — Setup Proyek & Infrastruktur
 
-**Status:** ✅ Selesai  
+**Status:** ✅ Selesai (Terverifikasi Penuh)  
 **Target:** Proyek Laravel + Vue berjalan di lokal
 
 #### Backend Tasks
@@ -90,14 +90,14 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 - [x] Tetapkan daftar migration yang masih conditional
 - [x] Tutup blocker utama migration `users` melalui schema aktif yang telah memakai enum `super_admin` dan `alumni`
 - [x] Verifikasi bahwa risiko enum role pada tabel `users` tidak lagi menjadi blocker penutupan Session 1A
-- [ ] Jalankan `php artisan migrate`
-- [ ] Verifikasi foreign key, index, dan enum di database hasil migrasi
+- [x] Jalankan `php artisan migrate`
+- [x] Verifikasi foreign key, index, dan enum di database hasil migrasi
 
 #### Model Tasks
 
 - [x] Review model dasar yang sudah dirancang untuk `User`, `OtpVerification`, dan `EmployerAccessToken`
 - [x] Review kebutuhan model terhadap perubahan schema final
-- [ ] Sinkronisasi final casts, fillable, dan relationship ke schema terbaru
+- [x] Sinkronisasi final casts, fillable, dan relationship ke schema terbaru
 
 #### Frontend Tasks
 
@@ -106,7 +106,7 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 - [x] Draft konfigurasi Tailwind CSS v3
 - [x] Draft konfigurasi `vite.config.js`
 - [x] Draft konfigurasi axios global
-- [ ] Verifikasi implementasi frontend terhadap hasil struktur backend final
+- [x] Verifikasi implementasi frontend terhadap hasil struktur backend final
 
 **Catatan Sesi 1A:**
 > Session 1A dinyatakan selesai setelah fondasi arsitektur, desain database, ERD, struktur proyek, dependensi, konfigurasi environment, dan migration inti `users` berhasil dikonsolidasikan.  
@@ -149,6 +149,7 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 > Session 1B dinyatakan selesai secara implementasi karena patch auth backend dan frontend yang sebelumnya berstatus draft telah resmi diterapkan ke codebase aktif.  
 > Fondasi autentikasi dan otorisasi kini telah mencakup sinkronisasi role `superadmin`, gate/policy, middleware auth, response JSON exception handling, serta store/router frontend.  
 > Dua item verifikasi operasional masih dicatat sebagai follow-up teknis ringan untuk transisi ke Session 1C: perilaku auth state saat refresh browser dan smoke test end-to-end untuk flow auth/employer. Keduanya tidak lagi dianggap blocker penutupan Session 1B, tetapi menjadi prasyarat QA awal Session 1C.
+> Patch konsistensi lanjutan dilakukan setelah audit cross-layer: field mismatch `otp_code` pada `OtpVerifyRequest` dan `OtpController` diperbaiki; method `requestEmployerOtp` dan `verifyEmployerOtp` ditambahkan ke `AuthService`; fillable `User` dan `OtpVerification` dilengkapi. Satu item masih terbuka: eager load relasi `institution` pada `verifyEmployerOtp` agar field `company` tidak null di response API.
 
 ---
 
@@ -175,6 +176,9 @@ File ini adalah **project memory permanen**. Setiap awal sesi development wajib:
 - [ ] Uji rehydration auth saat browser refresh melalui `GET /api/v1/auth/me`
 - [ ] Uji logout dan invalid token handling
 - [ ] Verifikasi redirect role `super_admin` dan `alumni`
+- [ ] Jalankan `npm run dev` dan verifikasi CSS Tailwind tampil di browser
+- [ ] Jalankan `npm run build` dan verifikasi `public/build/manifest.json` terbentuk
+- [ ] Konfirmasi root cause CSS tidak tampil: Vite dev server belum aktif (bukan bug kode)
 
 #### Catatan Session 1C
 > Final code patch Session 1C telah disusun untuk menutup gap antara halaman auth frontend, store Pinia, dan kontrak API autentikasi resmi.  
@@ -913,6 +917,8 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 | 2026-06-04 | — | Employer token: SHA-256 hash + plain di-null | Token sekali pakai, plain dihapus setelah dikirim |
 | 2026-06-04 | — | Snapshot immutable pada questionnaire_responses | Perubahan kuesioner tidak merusak data historis |
 | 2026-06-04 | — | SoftDeletes pada semua tabel master | Data tidak pernah benar-benar terhapus permanen |
+| 2026-06-05 | 1B/1C | CSS dikelola via `import '../css/app.css'` di `app.js` — Vite wajib aktif (dev) atau `npm run build` dijalankan (prod) agar CSS tampil | Konsisten dengan arsitektur Laravel + Vite SPA |
+| 2026-06-05 | 1B | Eager load `institution` wajib ditambahkan di `verifyEmployerOtp` untuk mencegah `company: null` di response API | N+1 silent bug — relasi tidak di-load meski data ada di DB |
 
 ---
 
@@ -922,7 +928,8 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 
 | ID | Tanggal | Deskripsi | Status | Solusi |
 |----|---------|-----------|--------|--------|
-| — | — | — | — | — |
+| C-001 | 2026-06-05 | `verifyEmployerOtp` tidak eager load relasi `institution`, menyebabkan `company` selalu `null` di response | 🔴 Open | Tambah `institution` ke `->with([...])` di `AuthService::verifyEmployerOtp()` |
+| C-002 | 2026-06-05 | CSS tidak tampil di lokal — bukan bug, Vite dev server belum dijalankan | ✅ Resolved | Jalankan `npm run dev` atau `npm run build` |
 
 ---
 

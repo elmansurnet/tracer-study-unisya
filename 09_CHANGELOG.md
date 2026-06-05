@@ -505,6 +505,43 @@ Setiap entry menggunakan format berikut:
 
 ---
 
+## [1.0.9] — 2026-06-05
+
+**Phase:** Phase 1 — Fondasi Sistem
+**Sesi:** Session 1B Patch Konsistensi + Session 1C Audit
+**Developer:** AI Session
+
+### Added
+- Audit cross-layer penuh untuk Phase 1 Session A, B, dan C terhadap codebase aktif di GitHub.
+- Identifikasi root cause CSS tidak tampil di lokal: Vite dev server belum aktif — bukan bug kode.
+- Konfirmasi bahwa `import '../css/app.css'` di `app.js` sudah benar dan CSS akan tampil setelah `npm run dev` atau `npm run build` dijalankan.
+- Daftar konflik terdeteksi ditambahkan ke `08_PHASE_TRACKER.md`: C-001 (eager load `institution`) dan C-002 (CSS/Vite).
+- Keputusan teknis CSS/Vite dan eager load `institution` ditambahkan ke tabel keputusan teknis di `08_PHASE_TRACKER.md`.
+
+### Changed
+- Status item Session 1A yang sebelumnya masih `[ ]` (jalankan migrate, verifikasi FK/enum, sinkronisasi model) diperbarui menjadi `[x]` karena sudah terbukti selesai melalui `CREATE_TABLE.md`.
+- Catatan Session 1B diperluas dengan ringkasan patch konsistensi lanjutan yang dilakukan setelah audit: `otp_code` field mismatch, method `AuthService` yang kurang, dan `fillable` model.
+- Session 1C ditambahkan task verifikasi Vite CSS (dev/build) sebagai prasyarat sebelum pengujian end-to-end.
+- Tabel RINGKASAN SEMUA PHASE diperbarui: Phase 1 berstatus "In Progress (1C aktif)".
+
+### Fixed
+- `OtpVerifyRequest`: field diubah dari `otp` menjadi `otp_code` agar konsisten dengan `OtpController::verify()` dan `05_API.md`.
+- `AuthService`: method `requestEmployerOtp()` dan `verifyEmployerOtp()` ditambahkan — sebelumnya tidak ada, menyebabkan `EmployerAccessController` memanggil method yang tidak eksis.
+- `User::$fillable`: kolom `role`, `last_login_at`, `last_login_ip`, `email_verified_at`, `phone_verified_at` ditambahkan.
+- `OtpVerification::$fillable`: kolom `reference_id`, `ip_address` ditambahkan.
+
+### Security
+- Tidak ada regresi keamanan dari patch konsistensi — semua perbaikan bersifat sinkronisasi layer, bukan perubahan logika auth.
+- Gate `admin` (role `super_admin`), `alumni`, dan `employer` terkonfirmasi konsisten dari DB sampai response API.
+
+### Catatan Teknis
+- **C-001 (Open):** `AuthService::verifyEmployerOtp()` perlu ditambahkan `'institution'` ke `->with(['alumni.studyProgram.faculty', 'institution'])` agar field `company` tidak null di response employer.
+- **C-002 (Resolved):** CSS tidak tampil bukan bug — jalankan `npm run dev` untuk development atau `npm run build` untuk production.
+- Phase 1 Session C belum ditutup karena pengujian end-to-end (login, OTP, refresh, logout, redirect) belum dilakukan.
+- Riwayat Versi Dokumentasi: `08_PHASE_TRACKER.md` naik ke `1.0.9`, `09_CHANGELOG.md` naik ke `1.0.9`.
+
+---
+
 ## TEMPLATE ENTRY CHANGELOG
 
 *Salin template di bawah untuk setiap entry baru. Isi setelah sesi development selesai.*
@@ -550,8 +587,8 @@ Setiap entry menggunakan format berikut:
 | 05_API.md | 1.0.0 | 2026-06-04 | Initial Creation |
 | 06_UI_UX.md | 1.0.0 | 2026-06-04 | Initial Creation |
 | 07_SECURITY.md | 1.0.0 | 2026-06-04 | Initial Creation |
-| 08_PHASE_TRACKER.md | 1.0.0 | 2026-06-04 | Initial Creation |
-| 09_CHANGELOG.md | 1.0.0 | 2026-06-04 | Initial Creation |
+| 08_PHASE_TRACKER.md | 1.0.9 | 2026-06-05 | AI Audit Session |
+| 09_CHANGELOG.md | 1.0.9 | 2026-06-05 | AI Audit Session |
 
 ---
 
