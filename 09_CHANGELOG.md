@@ -1,6 +1,6 @@
 # 09_CHANGELOG.md — Riwayat Perubahan Tracer Study UNISYA
 
-**Versi:** 1.0.8
+**Versi:** 1.0.9
 **Tanggal Dibuat:** 2026-06-05
 **Institusi:** Universitas Islam Syarifuddin (UNISYA)
 **Format:** [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
