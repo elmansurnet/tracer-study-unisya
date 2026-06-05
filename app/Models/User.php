@@ -14,12 +14,28 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
 
+    /**
+     * Mass-assignable fields.
+     *
+     * CATATAN KEAMANAN:
+     * - 'role' disertakan agar seeder/factory dapat mengisi field ini.
+     *   Di production, field ini TIDAK boleh diisi langsung dari request user.
+     *   Selalu gunakan forceFill() atau assignment eksplisit di Service/Controller.
+     * - 'password' tidak perlu di sini karena sudah di-cast 'hashed'.
+     * - 'last_login_at' dan 'last_login_ip' diisi via forceFill() di AuthService,
+     *   namun tetap didaftarkan agar tidak tertolak saat Unit Test / seeder.
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'phone',
+        'role',
         'is_active',
+        'last_login_at',
+        'last_login_ip',
+        'email_verified_at',
+        'phone_verified_at',
     ];
 
     protected $hidden = [
@@ -32,16 +48,24 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
-            'last_login_at' => 'datetime',
-            'is_active' => 'boolean',
-            'password' => 'hashed',
+            'last_login_at'     => 'datetime',
+            'is_active'         => 'boolean',
+            'password'          => 'hashed',
         ];
     }
+
+    // -------------------------------------------------------------------------
+    // Relationships
+    // -------------------------------------------------------------------------
 
     public function alumni(): HasOne
     {
         return $this->hasOne(Alumni::class, 'user_id');
     }
+
+    // -------------------------------------------------------------------------
+    // Helper Methods
+    // -------------------------------------------------------------------------
 
     public function isSuperAdmin(): bool
     {

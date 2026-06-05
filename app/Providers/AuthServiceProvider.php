@@ -17,12 +17,32 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        Gate::define('admin', function (User $user) {
-            return $user->role === 'super_admin' && $user->is_active;
+        /*
+         * Gate 'admin' — hanya role 'super_admin' yang aktif.
+         * Digunakan di: Route::middleware('can:admin') dan $this->authorize('admin').
+         *
+         * KONSISTENSI: role string adalah 'super_admin' (bukan 'admin'),
+         * sesuai 02_DATABASE.md kolom users.role ENUM('super_admin','alumni','pengguna_alumni').
+         */
+        Gate::define('admin', static function (User $user): bool {
+            return $user->role === 'super_admin' && (bool) $user->is_active;
         });
 
-        Gate::define('alumni', function (User $user) {
-            return $user->role === 'alumni' && $user->is_active;
+        /*
+         * Gate 'alumni' — hanya role 'alumni' yang aktif.
+         */
+        Gate::define('alumni', static function (User $user): bool {
+            return $user->role === 'alumni' && (bool) $user->is_active;
+        });
+
+        /*
+         * Gate 'employer' — role 'pengguna_alumni' yang aktif.
+         * Digunakan di route employer portal.
+         */
+        Gate::define('employer', static function (User $user): bool {
+            return $user->role === 'pengguna_alumni'
+                && (bool) $user->is_active
+                && $user->tokenCan('employer');
         });
     }
 }

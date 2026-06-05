@@ -9,11 +9,20 @@ class OtpVerification extends Model
 {
     use HasUuids;
 
+    /**
+     * Mass-assignable fields.
+     *
+     * 'reference_id' dan 'ip_address' WAJIB ada di sini karena
+     * OtpService::generate() mengirim kedua field tersebut ke ::create().
+     * Tanpa ini, kedua field akan diabaikan secara silent (mass assignment protection).
+     */
     protected $fillable = [
         'identifier',
         'identifier_type',
         'otp_code',
         'purpose',
+        'reference_id',
+        'ip_address',
         'attempts',
         'max_attempts',
         'is_used',
@@ -29,6 +38,10 @@ class OtpVerification extends Model
             'expires_at' => 'datetime',
         ];
     }
+
+    // -------------------------------------------------------------------------
+    // Helper Methods
+    // -------------------------------------------------------------------------
 
     public function isExpired(): bool
     {

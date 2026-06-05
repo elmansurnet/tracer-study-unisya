@@ -15,26 +15,26 @@ class OtpVerifyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => ['required', 'string', 'max:255'],
-            'otp' => ['required', 'digits:6'],
-            'purpose' => ['required', Rule::in([
-                'login',
-                'employer_access',
-                'phone_verify',
-                'email_verify',
-            ])],
-            'reference_id' => ['nullable', 'uuid'],
+            'identifier'      => ['required', 'string', 'max:255'],
+            /*
+             * PATCH: field diganti dari 'otp' menjadi 'otp_code' agar
+             * konsisten dengan:
+             *   - 05_API.md  → Body: { identifier, otp_code }
+             *   - OtpController::verify() → $request->string('otp_code')
+             *   - EmployerOtpVerifyRequest → field 'otp_code'
+             */
+            'otp_code'        => ['required', 'digits:6'],
+            'identifier_type' => ['nullable', Rule::in(['email', 'whatsapp'])],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'identifier.required' => 'Email atau nomor WhatsApp wajib diisi.',
-            'otp.required' => 'Kode OTP wajib diisi.',
-            'otp.digits' => 'Kode OTP harus terdiri dari 6 digit.',
-            'purpose.in' => 'Purpose OTP tidak valid.',
-            'reference_id.uuid' => 'Reference ID harus berupa UUID yang valid.',
+            'identifier.required'  => 'Email atau nomor WhatsApp wajib diisi.',
+            'otp_code.required'    => 'Kode OTP wajib diisi.',
+            'otp_code.digits'      => 'Kode OTP harus terdiri dari 6 digit angka.',
+            'identifier_type.in'   => 'Tipe identifier harus email atau whatsapp.',
         ];
     }
 
@@ -44,12 +44,9 @@ class OtpVerifyRequest extends FormRequest
             'identifier' => is_string($this->identifier)
                 ? trim($this->identifier)
                 : $this->identifier,
-            'purpose' => is_string($this->purpose)
-                ? trim($this->purpose)
-                : $this->purpose,
-            'otp' => is_string($this->otp)
-                ? preg_replace('/\D+/', '', $this->otp)
-                : $this->otp,
+            'otp_code'   => is_string($this->otp_code)
+                ? preg_replace('/\D+/', '', $this->otp_code)
+                : $this->otp_code,
         ]);
     }
 }
