@@ -218,7 +218,7 @@ class AuthService
             ->where('is_used', false)
             ->where('is_revoked', false)
             ->where('expires_at', '>', now())
-            ->with(['alumni.studyProgram.faculty'])
+            ->with(['alumni.studyProgram.faculty', 'institution'])
             ->first();
 
         if (! $accessToken) {
