@@ -161,8 +161,8 @@ class AuthService
         }
 
         // Tentukan identifier & type untuk OTP (preferensi: whatsapp > email)
-        $identifier     = $accessToken->employer_phone ?? $accessToken->employer_email;
-        $identifierType = $accessToken->employer_phone ? 'whatsapp' : 'email';
+        $identifier     = $accessToken->contact_phone ?? $accessToken->contact_email;
+        $identifierType = $accessToken->contact_phone ? 'whatsapp' : 'email';
 
         if (! $identifier) {
             throw new AuthenticationException(
@@ -227,8 +227,8 @@ class AuthService
             );
         }
 
-        $identifier     = $accessToken->employer_phone ?? $accessToken->employer_email;
-        $identifierType = $accessToken->employer_phone ? 'whatsapp' : 'email';
+        $identifier     = $accessToken->contact_phone ?? $accessToken->contact_email;
+        $identifierType = $accessToken->contact_phone ? 'whatsapp' : 'email';
 
         $isValid = $otpService->verify(
             identifier:  $identifier,
@@ -243,20 +243,19 @@ class AuthService
 
         // Tandai access token sudah digunakan
         $accessToken->update([
-            'is_used'    => true,
-            'used_at'    => now(),
-            'used_ip'    => $ipAddress,
+            'is_used' => true,
+            'used_at' => now(),
         ]);
 
         // Cari atau buat User employer (role: pengguna_alumni)
         $employerUser = User::query()
-            ->where('email', $accessToken->employer_email)
+            ->where('email', $accessToken->contact_email)
             ->first();
 
         if (! $employerUser) {
             $employerUser = User::create([
-                'name'      => $accessToken->employer_name ?? 'Employer',
-                'email'     => $accessToken->employer_email,
+                'name'      => $accessToken->contact_name ?? 'Employer',
+                'email'     => $accessToken->contact_email,
                 'password'  => Hash::make(\Illuminate\Support\Str::random(32)),
                 'role'      => 'pengguna_alumni',
                 'is_active' => true,
@@ -281,10 +280,10 @@ class AuthService
             'token_type'   => 'Bearer',
             'expires_in'   => 7200,
             'employer_info' => [
-                'name'           => $accessToken->employer_name,
-                'company'        => $accessToken->employer_company,
-                'email'          => $accessToken->employer_email,
-                'phone'          => $accessToken->employer_phone,
+                'name'    => $accessToken->contact_name,
+                'company' => $accessToken->institution?->name,  // ambil dari relasi
+                'email'   => $accessToken->contact_email,
+                'phone'   => $accessToken->contact_phone,
             ],
             'alumni' => $accessToken->alumni ? [
                 'id'            => $accessToken->alumni->id,
