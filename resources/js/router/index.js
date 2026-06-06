@@ -75,7 +75,9 @@ const routes = [
         component: () => import('@/pages/admin/DashboardPage.vue'),
       },
 
-      // Phase 2A — Master Data
+      // =========================================================
+      // Phase 2A — Master Data: Users, Fakultas, Program Studi
+      // =========================================================
       {
         path: 'pengguna',
         name: 'admin.users',
@@ -94,44 +96,32 @@ const routes = [
         component: () => import('@/pages/admin/study-programs/StudyProgramsPage.vue'),
         meta: { title: 'Manajemen Program Studi' },
       },
-      // End Phase 2A - Master Data
 
+      // =========================================================
+      // Phase 2B — Master Data: Kategori Profesi, Profesi, Institusi
+      // =========================================================
       {
         path: 'kategori-profesi',
-        name: 'admin-profession-categories',
-        component: PlaceholderPage,
-        props: {
-          title: 'Kategori Profesi',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Kategori Profesi' },
-          ],
-        },
+        name: 'admin.profession-categories',
+        component: () => import('@/pages/admin/profession-categories/ProfessionCategoriesPage.vue'),
+        meta: { title: 'Kategori Profesi' },
       },
       {
         path: 'profesi',
-        name: 'admin-professions',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Profesi',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Profesi' },
-          ],
-        },
+        name: 'admin.professions',
+        component: () => import('@/pages/admin/professions/ProfessionsPage.vue'),
+        meta: { title: 'Manajemen Profesi' },
       },
       {
         path: 'institusi',
-        name: 'admin-institutions',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Institusi',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Institusi' },
-          ],
-        },
+        name: 'admin.institutions',
+        component: () => import('@/pages/admin/institutions/InstitutionsPage.vue'),
+        meta: { title: 'Manajemen Institusi' },
       },
+
+      // =========================================================
+      // Phase 3 — Alumni (Placeholder)
+      // =========================================================
       {
         path: 'alumni',
         name: 'admin-alumni',
@@ -169,6 +159,10 @@ const routes = [
           ],
         },
       },
+
+      // =========================================================
+      // Phase 4+ — Kuesioner, Tracer Study (Placeholder)
+      // =========================================================
       {
         path: 'kategori-kuesioner',
         name: 'admin-questionnaire-categories',

@@ -1,175 +1,131 @@
-# 09 — CHANGELOG
-
-> Semua perubahan signifikan dicatat di sini secara kronologis.
-> Format: `[YYYY-MM-DD] Phase · Session — Deskripsi`
+# Changelog — Tracer Study UNISYA
 
 ---
 
-## [2026-06-06] Phase 2B · Session Backend — Master Data Profesi & Institusi
+## [Phase 2B Session B] — 2026-06-06
 
-### Files Created
+### Frontend
 
-**Factory:**
-- `database/factories/ProfessionCategoryFactory.php`
-- `database/factories/ProfessionFactory.php`
-- `database/factories/InstitutionFactory.php`
+**Files Created:**
+- `resources/js/stores/useProfessionCategoryStore.js`
+- `resources/js/stores/useProfessionStore.js`
+- `resources/js/stores/useInstitutionStore.js`
+- `resources/js/pages/admin/profession-categories/ProfessionCategoriesPage.vue`
+- `resources/js/pages/admin/profession-categories/ProfessionCategoryFormModal.vue`
+- `resources/js/pages/admin/professions/ProfessionsPage.vue`
+- `resources/js/pages/admin/professions/ProfessionFormModal.vue`
+- `resources/js/pages/admin/institutions/InstitutionsPage.vue`
+- `resources/js/pages/admin/institutions/InstitutionFormModal.vue`
 
-**Seeder:**
-- `database/seeders/ProfessionCategorySeeder.php` — 10 kategori profesi umum UNISYA
-- `database/seeders/ProfessionSeeder.php` — ~50 profesi sesuai kategori (lookup by name)
-- `database/seeders/InstitutionSeeder.php` — 20 institusi tempat kerja alumni
+**Files Modified:**
+- `resources/js/router/index.js` — Replace PlaceholderPage untuk 3 route Phase 2B:
+  - `admin.profession-categories` → `ProfessionCategoriesPage.vue`
+  - `admin.professions` → `ProfessionsPage.vue`
+  - `admin.institutions` → `InstitutionsPage.vue`
+- `08_PHASE_TRACKER.md` — Mark Phase 2B COMPLETE
+- `09_CHANGELOG.md` — Update changelog
 
-**Repository:**
+**UI/UX Notes:**
+- Semua halaman konsisten dengan pola Phase 2A (search + table + pagination + modal)
+- `ProfessionsPage` memiliki filter tambahan by kategori profesi (dropdown)
+- `InstitutionsPage` memiliki filter tambahan by tipe institusi (dropdown)
+- `ProfessionFormModal` load dropdown kategori via `fetchAllCategories()` on mount
+- `InstitutionFormModal` list tipe: perusahaan, instansi, pendidikan, wirausaha, ngo, lainnya
+- Route names Phase 2B menggunakan naming convention `admin.{resource}` (dot notation) konsisten dengan Phase 2A
+
+---
+
+## [Phase 2B Session A] — 2026-06-06
+
+### Backend
+
+**Files Created:**
+- `database/migrations/2026_06_04_000007_create_profession_categories_table.php`
+- `database/migrations/2026_06_04_000008_create_professions_table.php`
+- `database/migrations/2026_06_04_000009_create_institutions_table.php`
+- `app/Models/ProfessionCategory.php`
+- `app/Models/Profession.php`
+- `app/Models/Institution.php`
 - `app/Repositories/ProfessionCategoryRepository.php`
-- `app/Repositories/ProfessionRepository.php` — filter tambahan: `profession_category_id`
-- `app/Repositories/InstitutionRepository.php` — filter tambahan: `type`
-
-**Service:**
+- `app/Repositories/ProfessionRepository.php`
+- `app/Repositories/InstitutionRepository.php`
 - `app/Services/ProfessionCategoryService.php`
-- `app/Services/ProfessionService.php` — unique check per kategori (name + category_id)
-- `app/Services/InstitutionService.php` — field tambahan: type, sector, website, logo
-
-**Request:**
+- `app/Services/ProfessionService.php`
+- `app/Services/InstitutionService.php`
+- `app/Http/Controllers/Admin/ProfessionCategoryController.php`
+- `app/Http/Controllers/Admin/ProfessionController.php`
+- `app/Http/Controllers/Admin/InstitutionController.php`
 - `app/Http/Requests/Admin/StoreProfessionCategoryRequest.php`
 - `app/Http/Requests/Admin/UpdateProfessionCategoryRequest.php`
 - `app/Http/Requests/Admin/StoreProfessionRequest.php`
 - `app/Http/Requests/Admin/UpdateProfessionRequest.php`
 - `app/Http/Requests/Admin/StoreInstitutionRequest.php`
 - `app/Http/Requests/Admin/UpdateInstitutionRequest.php`
-
-**Resource:**
-- `app/Http/Resources/ProfessionCategoryResource.php`
-- `app/Http/Resources/ProfessionResource.php` — include `category` via `whenLoaded`
-- `app/Http/Resources/InstitutionResource.php` — include `detail` via `whenLoaded`
-
-**Policy:**
+- `app/Http/Resources/Admin/ProfessionCategoryResource.php`
+- `app/Http/Resources/Admin/ProfessionResource.php`
+- `app/Http/Resources/Admin/InstitutionResource.php`
 - `app/Policies/ProfessionCategoryPolicy.php`
 - `app/Policies/ProfessionPolicy.php`
 - `app/Policies/InstitutionPolicy.php`
 
-**Controller:**
-- `app/Http/Controllers/Api/Admin/ProfessionCategoryController.php`
-- `app/Http/Controllers/Api/Admin/ProfessionController.php` — `all()` support filter `profession_category_id`
-- `app/Http/Controllers/Api/Admin/InstitutionController.php` — include `showDetail` & `updateDetail` (placeholder 501)
-
-### Files Modified
-- `08_PHASE_TRACKER.md` — Phase 2B Backend ditandai ✅ SELESAI
-- `09_CHANGELOG.md` — Entry ini
-
-### Database Changes
-- Tidak ada perubahan schema (Migration & Model sudah ada sebelumnya)
-- Seeder baru siap dijalankan: `ProfessionCategorySeeder`, `ProfessionSeeder`, `InstitutionSeeder`
-
-### API Changes
-- Routes sudah terdaftar sebelumnya di `routes/api.php`
-- Endpoint baru aktif:
-  - `GET|POST /api/v1/admin/profession-categories` + `/{id}` + `/all` + `/{id}/restore`
-  - `GET|POST /api/v1/admin/professions` + `/{id}` + `/all` + `/{id}/restore`
-  - `GET|POST /api/v1/admin/institutions` + `/{id}` + `/all` + `/{id}/restore` + `/{id}/detail`
-
-### Security Changes
-- Semua endpoint dilindungi `auth:sanctum` + `ensure.active` + `can:admin`
-- Semua Policy: `isSuperAdmin()` untuk semua aksi (viewAny, view, create, update, delete, restore)
-- Request authorize: `$user->isSuperAdmin()`
-
-### Architecture Notes
-- `ProfessionCategory` tidak memiliki `code` (berbeda dari Faculty/StudyProgram)
-- Unique check `Profession`: kombinasi `name + profession_category_id` (bukan hanya `name`)
-- `InstitutionController::updateDetail()` → 501 placeholder; `InstitutionDetail` model implementasi Phase berikutnya
-- Semua Service inject `AuditService` dan catat audit log untuk setiap operasi CRUD
-
 ---
 
-## [2026-06-06] Phase 2A · Session 2A-2 — Frontend Master Data + Store Fix
+## [Phase 2A Session C — Frontend] — 2026-06-04
 
-### Files Created
-- `resources/js/components/base/AppTable.vue` — Reusable table dengan slot, skeleton, empty state
-- `resources/js/components/base/AppPagination.vue` — Pagination dengan ellipsis dan info data
-- `resources/js/pages/admin/users/UsersPage.vue` — Halaman manajemen pengguna
-- `resources/js/pages/admin/users/UserFormModal.vue` — Form create/edit pengguna
-- `resources/js/pages/admin/faculties/FacultiesPage.vue` — Halaman manajemen fakultas
-- `resources/js/pages/admin/faculties/FacultyFormModal.vue` — Form create/edit fakultas
-- `resources/js/pages/admin/study-programs/StudyProgramsPage.vue` — Halaman manajemen program studi
-- `resources/js/pages/admin/study-programs/StudyProgramFormModal.vue` — Form create/edit prodi
-- `database/factories/FacultyFactory.php`
-- `database/factories/StudyProgramFactory.php`
+### Frontend
 
-### Files Modified
-- `resources/js/stores/useUserStore.js`
-  - Rename state `pagination` → `meta` (konsisten dengan Pages)
-  - Tambah optimistic update di `toggleActive`
-  - Init `meta` dengan default shape lengkap (termasuk `per_page`)
+**Files Created:**
 - `resources/js/stores/useFacultyStore.js`
-  - Rename state `pagination` → `meta`
-  - Tambah optimistic delete di `deleteFaculty`
-  - Tambah `fetchAllFaculties` untuk dropdown
-  - Init `meta` dengan default shape lengkap
 - `resources/js/stores/useStudyProgramStore.js`
-  - Rename state `pagination` → `meta`
-  - Rename state `programs` → `studyPrograms` (konsisten dengan Pages)
-  - Rename actions: `fetchPrograms` → `fetchStudyPrograms`, `createProgram` → `createStudyProgram`, `updateProgram` → `updateStudyProgram`, `deleteProgram` → `deleteStudyProgram`, `restoreProgram` → `restoreStudyProgram`
-  - Tambah optimistic delete di `deleteStudyProgram`
-  - Init `meta` dengan default shape lengkap
-- `resources/js/router/index.js`
-  - Tambah 3 routes Phase 2A: `pengguna`, `fakultas`, `program-studi`
-- `database/seeders/DatabaseSeeder.php`
-  - Daftarkan `FacultySeeder`, `StudyProgramSeeder`
-- `08_PHASE_TRACKER.md` — Phase 2A ditutup ✅, Phase 2B dibuka 🟡
-- `09_CHANGELOG.md` — Entry ini
+- `resources/js/stores/useUserStore.js`
+- `resources/js/pages/admin/faculties/FacultiesPage.vue`
+- `resources/js/pages/admin/faculties/FacultyFormModal.vue`
+- `resources/js/pages/admin/study-programs/StudyProgramsPage.vue`
+- `resources/js/pages/admin/study-programs/StudyProgramFormModal.vue`
+- `resources/js/pages/admin/users/UsersPage.vue`
+- `resources/js/pages/admin/users/UserFormModal.vue`
 
-### Bug Fixes
-- **`FacultyFormModal.vue` baris 11**: `const store = useUserStore()` tanpa import → akan crash `ReferenceError`
-- **Semua store**: mismatch key `pagination` vs `meta` → diseragamkan ke `meta`
-- **`useStudyProgramStore`**: Pages memanggil `store.studyPrograms` dan `store.fetchStudyPrograms()` → diseragamkan
-
-### Database Changes
-- Tidak ada perubahan schema di session ini
-- Factory baru: `FacultyFactory`, `StudyProgramFactory`
+**Files Modified:**
+- `resources/js/router/index.js` — Register routes Phase 2A
 
 ---
 
-## [2026-06-04] Phase 1C · Security Patch — super_admin Consistency
+## [Phase 2A Session B — Backend] — 2026-06-04
 
-### Files Modified
-- `app/Http/Controllers/Api/Auth/LoginController.php` — Guard super_admin fix
-- `app/Http/Controllers/Api/Auth/OtpController.php` — Field otp_code fix
-- `app/Http/Controllers/Api/Auth/EmployerAccessController.php` — Inject AuthService
-- `app/Services/AuthService.php` — Tambah requestEmployerOtp, verifyEmployerOtp
-- `app/Models/User.php` — Lengkapi $fillable
-- `app/Models/OtpVerification.php` — Lengkapi $fillable
-- `app/Providers/AuthServiceProvider.php` — Verifikasi Gate konsistensi
+### Backend
 
-### Security Changes
-- `super_admin` role konsisten dari database hingga response API
-- OTP field naming diseragamkan (`otp_code`)
-- EmployerAccess tidak lagi bypass AuthService
-
----
-
-## [2026-05-xx] Phase 1B · Session 1B — Frontend Foundation
-
-### Files Created
-- Setup Vue 3, Vite, Pinia, Vue Router, Tailwind CSS
-- Store: `useAuthStore`, `useUIStore`
-- Layout: `AdminLayout`, `AlumniLayout`, `AuthLayout`, `EmployerLayout`
-- Component: `AppSidebar`, `AppButton`, `AppInput`, `AppModal`, `AppSelect`, `AppBadge`, `AppSkeleton`, `AppConfirm`
-- Pages: Auth (Login, OTP), Admin Dashboard, Alumni Dashboard, Employer pages
-- Router: `index.js` lengkap dengan guards
-- HTTP: `lib/http.js`
+**Files Created:**
+- `app/Repositories/FakultasRepository.php`
+- `app/Services/FakultasService.php`
+- `app/Http/Controllers/Admin/FakultasController.php`
+- `app/Http/Requests/Admin/StoreFakultasRequest.php`
+- `app/Http/Requests/Admin/UpdateFakultasRequest.php`
+- `app/Http/Resources/Admin/FakultasResource.php`
+- `app/Policies/FakultasPolicy.php`
+- *(idem untuk StudyProgram dan User)*
+- `routes/admin.php`
 
 ---
 
-## [2026-05-xx] Phase 1A · Session 1A — Backend Foundation
+## [Phase 2A Session A — Migration + Model] — 2026-06-04
 
-### Files Created
-- Migrations: users, otp_verifications, employer_accesses, personal_access_tokens
-- Models: User, OtpVerification, EmployerAccess
-- Services: AuthService, OtpService
-- Controllers: LoginController, OtpController, EmployerAccessController
-- Middleware: EnsureUserIsActive
-- Seeder: RoleSeeder
-- Routes: api.php initial
+### Database
+
+**Files Created:**
+- `database/migrations/2026_06_04_000004_create_faculties_table.php`
+- `database/migrations/2026_06_04_000005_create_study_programs_table.php`
+- `app/Models/Fakultas.php`
+- `app/Models/StudyProgram.php`
 
 ---
 
-*Terakhir diupdate: 06 Juni 2026 — Phase 2B Backend SELESAI ✅*
+## [Phase 1 — Setup & Infrastruktur] — 2026-06-01
+
+### Initial Setup
+- Laravel 12 + PHP 8.3 installed
+- Vue 3 + Vite + Pinia + Vue Router configured
+- Base layouts: AdminLayout, AlumniLayout, EmployerLayout
+- Base components: AppButton, AppInput, AppModal, AppTable, AppPagination, AppBadge, AppConfirm
+- Auth: Sanctum SPA + OTP flow
+- Stores: auth.js, ui.js
+- Login, OTP, Dashboard pages
