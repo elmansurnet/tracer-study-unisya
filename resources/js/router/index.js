@@ -74,42 +74,28 @@ const routes = [
         name: 'admin-dashboard',
         component: () => import('@/pages/admin/DashboardPage.vue'),
       },
+
+      // Phase 2A — Master Data
       {
         path: 'pengguna',
-        name: 'admin-users',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Pengguna',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Pengguna' },
-          ],
-        },
+        name: 'admin.users',
+        component: () => import('@/pages/admin/users/UsersPage.vue'),
+        meta: { title: 'Manajemen Pengguna' },
       },
       {
         path: 'fakultas',
-        name: 'admin-faculties',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Fakultas',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Fakultas' },
-          ],
-        },
+        name: 'admin.faculties',
+        component: () => import('@/pages/admin/faculties/FacultiesPage.vue'),
+        meta: { title: 'Manajemen Fakultas' },
       },
       {
         path: 'program-studi',
-        name: 'admin-study-programs',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Program Studi',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Program Studi' },
-          ],
-        },
+        name: 'admin.study-programs',
+        component: () => import('@/pages/admin/study-programs/StudyProgramsPage.vue'),
+        meta: { title: 'Manajemen Program Studi' },
       },
+      // End Phase 2A - Master Data
+
       {
         path: 'kategori-profesi',
         name: 'admin-profession-categories',
