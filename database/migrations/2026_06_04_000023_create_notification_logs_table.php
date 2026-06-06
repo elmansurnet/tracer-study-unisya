@@ -1,3 +1,0 @@
-<?php
-// FILE INI KOSONG — SENGAJA DIHAPUS, DIGANTIKAN OLEH 2026_06_04_000024_create_notification_logs_table.php
-// JANGAN DIJALANKAN
