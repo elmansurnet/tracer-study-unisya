@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,14 +10,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AlumniEmploymentHistory extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'alumni_employment_histories';
 
     // ─── Enum constants ──────────────────────────────────────────────────────
 
-    public const SALARY_RANGES    = ['<1jt', '1-3jt', '3-5jt', '5-10jt', '>10jt'];
-    public const JOB_RELEVANCES   = ['sangat_relevan', 'relevan', 'kurang_relevan', 'tidak_relevan'];
+    public const SALARY_RANGES  = ['<1jt', '1-3jt', '3-5jt', '5-10jt', '>10jt'];
+    public const JOB_RELEVANCES = ['sangat_relevan', 'relevan', 'kurang_relevan', 'tidak_relevan'];
 
     // ─── Mass-assignable ─────────────────────────────────────────────────────
 
