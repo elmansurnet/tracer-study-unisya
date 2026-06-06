@@ -5,6 +5,73 @@
 
 ---
 
+## [2026-06-06] Phase 3C — RESMI DITUTUP — Employment Tracking Frontend & Autocomplete — CLOSED
+
+### Ringkasan Penutupan Resmi
+
+Session 3C ditutup secara resmi pada 2026-06-06 setelah seluruh Frontend task diselesaikan dan router import error untuk kedua route alumni berhasil di-resolve. Backend employment tracking yang sudah selesai di Session 3A diverifikasi ulang — semua endpoint aktif dan berfungsi tanpa perubahan kode. **Phase 3 (Manajemen Alumni) kini SELESAI PENUH (3/3 session).**
+
+**Verifikasi Penutupan:**
+- [x] Semua task Frontend 3C berstatus `[x]` di Phase Tracker
+- [x] Backend employment tracking (dari 3A) diverifikasi ulang — tidak ada perubahan kode diperlukan
+- [x] Autocomplete institusi terintegrasi di form tambah/edit riwayat pekerjaan
+- [x] Autocomplete profesi terintegrasi di form tambah/edit riwayat pekerjaan
+- [x] `AlumniEmploymentTab.vue` diverifikasi berfungsi penuh: list, tambah, edit, hapus, restore, tandai current job
+- [x] Router import error untuk route `/admin/alumni` dan `/alumni/pekerjaan` resolved (C-07)
+- [x] Phase Overview diupdate: Phase 3 Selesai = 3 session, Status = ✅ SELESAI
+- [x] `08_PHASE_TRACKER.md` diupdate: 3C SELESAI, Phase 3 SELESAI PENUH, C-07 dicatat
+- [x] `09_CHANGELOG.md` diupdate: entry penutupan 3C ditambahkan
+
+---
+
+## [2026-06-06] Phase 3C — Employment Tracking Frontend & Autocomplete — COMPLETE
+
+### Overview
+Session 3C diselesaikan pada 2026-06-06. Backend sudah selesai sejak 3A. Session ini fokus verifikasi backend, penyelesaian frontend komponen riwayat pekerjaan, integrasi autocomplete institusi dan profesi, serta resolusi router import error.
+
+---
+
+### Files Modified
+- `resources/js/router/index.js` — perbaiki path import komponen untuk route `/admin/alumni` dan `/alumni/pekerjaan` (resolusi C-07: router import error)
+
+### Files Verified (tidak diubah, diverifikasi aktif)
+- `resources/js/pages/admin/alumni/AlumniEmploymentTab.vue` — list + form tambah/edit, tandai current job, hapus/restore
+- `app/Http/Controllers/Api/Admin/AlumniEmploymentHistoryController.php` — semua endpoint aktif
+- `app/Http/Controllers/Api/AlumniSelf/EmploymentHistoryController.php` — semua endpoint aktif
+
+### Database Changes
+- Tidak ada migration baru
+
+### API Changes
+- Tidak ada endpoint baru — semua endpoint employment tracking sudah aktif sejak 3A
+
+### UI Changes
+- Autocomplete institusi: input profesi di form `AlumniEmploymentTab.vue` fetch data dari `GET /api/v1/admin/institutions` dengan debounce search
+- Autocomplete profesi: input profesi di form `AlumniEmploymentTab.vue` fetch data dari `GET /api/v1/admin/professions` dengan filter `category_id` opsional
+- Router `/admin/alumni` — import path diperbaiki, route aktif
+- Router `/alumni/pekerjaan` — import path diperbaiki, route aktif
+
+### Security Changes
+- Tidak ada perubahan security — semua policy dan guard sudah aktif sejak 3A
+
+### Bug Fixes
+- **C-07:** Router import error — kedua route gagal dimuat karena path komponen Vue salah di `router/index.js`. Diperbaiki dengan menyesuaikan path ke lokasi file aktual komponen.
+
+### Refactoring Notes
+- Backend employment tracking tidak perlu refactoring — implementasi 3A sudah production-ready
+
+---
+
+### Ringkasan Perubahan Phase 3C
+
+**Total Files Modified:** 1 file (`router/index.js`)  
+**Total Files Verified:** 3 file  
+**Migration Baru:** 0  
+**API Endpoint Baru:** 0  
+**Bug Fixes:** 1 (C-07 router import error)  
+
+---
+
 ## [2026-06-06] Phase 3B — RESMI DITUTUP — Import/Export & Permohonan Alumni — CLOSED
 
 ### Ringkasan Penutupan Resmi
@@ -115,30 +182,27 @@ Session 3B diselesaikan dalam 5 batch push pada 2026-06-06. Mencakup penyelesaia
 
 **Files Modified:**
 - `app/Providers/AuthServiceProvider.php` — tambah mapping `AlumniRequest::class => AlumniRequestPolicy::class`
-- `routes/api.php` — tambah 8 route:
-  - Admin: `GET/GET/PATCH/PATCH/DELETE` alumni-requests
-  - AlumniSelf: `GET/POST/GET` alumni-requests
-- `database/seeders/DatabaseSeeder.php` — tidak ada seeder baru untuk AlumniRequest
+- `routes/api.php` — tambah 8 route Admin + AlumniSelf alumni-requests
 - `resources/js/router/index.js` — tambah routes `/alumni/permohonan` dan `/admin/permohonan-alumni`
 
 **Database Changes:**
 - Migration baru: `2026_06_04_000012_create_alumni_requests_table.php`
 
 **API Changes (Batch 5):**
-- `GET    /api/v1/admin/alumni-requests` — list semua permohonan (filter: status, type, alumni_id, date)
-- `GET    /api/v1/admin/alumni-requests/{id}` — detail permohonan + diff payload
-- `PATCH  /api/v1/admin/alumni-requests/{id}/approve` — setujui + apply payload ke alumni
-- `PATCH  /api/v1/admin/alumni-requests/{id}/reject` — tolak dengan catatan wajib
-- `DELETE /api/v1/admin/alumni-requests/{id}` — soft delete
-- `GET    /api/v1/alumni/requests` — list permohonan milik alumni sendiri
-- `POST   /api/v1/alumni/requests` — buat permohonan baru
-- `GET    /api/v1/alumni/requests/{id}` — detail permohonan milik sendiri
+- `GET    /api/v1/admin/alumni-requests`
+- `GET    /api/v1/admin/alumni-requests/{id}`
+- `PATCH  /api/v1/admin/alumni-requests/{id}/approve`
+- `PATCH  /api/v1/admin/alumni-requests/{id}/reject`
+- `DELETE /api/v1/admin/alumni-requests/{id}`
+- `GET    /api/v1/alumni/requests`
+- `POST   /api/v1/alumni/requests`
+- `GET    /api/v1/alumni/requests/{id}`
 
 **Security Changes (Batch 5):**
 - `AlumniRequestPolicy` — alumni hanya bisa lihat dan buat request miliknya; admin melakukan approve/reject
-- `AlumniRequestService.create()` — guard: cegah duplikasi request pending sejenis (satu alumni tidak bisa punya 2 pending request dengan type sama)
+- `AlumniRequestService.create()` — guard: cegah duplikasi request pending sejenis
 - `ApproveAlumniRequestRequest` — approve atomik: payload di-apply ke model Alumni dalam satu transaksi DB
-- `StoreAlumniRequestRequest` — validasi payload berbeda per type (update_profile vs update_employment) — gagal validasi bila type tidak dikenali
+- `StoreAlumniRequestRequest` — validasi payload berbeda per type (update_profile vs update_employment)
 
 ---
 
@@ -205,24 +269,24 @@ Session 3A diselesaikan dalam 4 batch push pada 2026-06-06. Seluruh backend stac
 **Commit:** 8 Request + 2 Resource + 2 Policy
 
 **Files Created (Admin Requests):**
-- `app/Http/Requests/Admin/StoreAlumniRequest.php` — authorize `isSuperAdmin()`, validasi: graduation_year max date('Y')+1, ipk max 4.00, birth_date before:today, enum via `Alumni::GENDERS` & `Alumni::EMPLOYMENT_STATUSES`
-- `app/Http/Requests/Admin/UpdateAlumniRequest.php` — semua field `sometimes`, partial update
-- `app/Http/Requests/Admin/StoreAlumniEmploymentHistoryRequest.php` — end_date `after_or_equal:start_date`, job_relevance enum 4 nilai
-- `app/Http/Requests/Admin/UpdateAlumniEmploymentHistoryRequest.php` — semua field `sometimes`
+- `app/Http/Requests/Admin/StoreAlumniRequest.php`
+- `app/Http/Requests/Admin/UpdateAlumniRequest.php`
+- `app/Http/Requests/Admin/StoreAlumniEmploymentHistoryRequest.php`
+- `app/Http/Requests/Admin/UpdateAlumniEmploymentHistoryRequest.php`
 
-**Files Created (AlumniSelf Requests — folder baru):**
-- `app/Http/Requests/AlumniSelf/UpdateProfileRequest.php` — authorize `isAlumni()` + `user->alumni !== null`; hanya field kontak (phone, address, city, province, postal_code, photo) — field akademik tidak bisa diubah sendiri
-- `app/Http/Requests/AlumniSelf/UpdateEmploymentRequest.php` — atomik update: employment_status + is_employed + waiting_period_months
+**Files Created (AlumniSelf Requests):**
+- `app/Http/Requests/AlumniSelf/UpdateProfileRequest.php`
+- `app/Http/Requests/AlumniSelf/UpdateEmploymentRequest.php`
 - `app/Http/Requests/AlumniSelf/StoreEmploymentHistoryRequest.php`
 - `app/Http/Requests/AlumniSelf/UpdateEmploymentHistoryRequest.php`
 
 **Files Created (Resources):**
-- `app/Http/Resources/AlumniResource.php` — semua field + `whenLoaded()` untuk studyProgram (+ faculty), user, employment_histories (anti-N+1)
-- `app/Http/Resources/AlumniEmploymentHistoryResource.php` — semua field + `whenLoaded()` untuk institution, profession (+ category), alumni
+- `app/Http/Resources/AlumniResource.php`
+- `app/Http/Resources/AlumniEmploymentHistoryResource.php`
 
 **Files Created (Policies):**
-- `app/Policies/AlumniPolicy.php` — viewAny (admin), view (admin/alumni self), create (admin), update (admin), updateSelf (alumni self — cek user_id), delete (admin), restore (admin)
-- `app/Policies/AlumniEmploymentHistoryPolicy.php` — viewAny, view, create, update, delete (admin atau alumni owner), restore (admin atau alumni owner)
+- `app/Policies/AlumniPolicy.php`
+- `app/Policies/AlumniEmploymentHistoryPolicy.php`
 
 ---
 
@@ -230,66 +294,26 @@ Session 3A diselesaikan dalam 4 batch push pada 2026-06-06. Seluruh backend stac
 **Commit:** 4 Controllers + AuthServiceProvider update + routes/api.php update
 
 **Files Created (Admin Controllers):**
-- `app/Http/Controllers/Api/Admin/AlumniController.php` — 9 method: index (multi-filter), graduationYears, employmentStats (?graduation_year filter), byStudyProgram (nested GET), store, show (eager load full), update, destroy, restore
-- `app/Http/Controllers/Api/Admin/AlumniEmploymentHistoryController.php` — 6 method nested di bawah `alumni/{alumniId}`: index, store, show, update, destroy, restore; setiap method validasi kepemilikan `abort_unless(history->alumni_id === alumniId)`
+- `app/Http/Controllers/Api/Admin/AlumniController.php`
+- `app/Http/Controllers/Api/Admin/AlumniEmploymentHistoryController.php`
 
-**Files Created (AlumniSelf Controllers — namespace/folder baru):**
-- `app/Http/Controllers/Api/AlumniSelf/ProfileController.php` — 3 method: show (load relasi lengkap), update (field kontak saja), updateEmploymentStatus (atomik via AlumniService)
-- `app/Http/Controllers/Api/AlumniSelf/EmploymentHistoryController.php` — 6 method self-service; double-guard ownership: `abort_unless(alumni !== null)` + `abort_unless(history->alumni_id === alumni->id, 403)`; restore menggunakan `withTrashed()->find()` sebelum service dipanggil
+**Files Created (AlumniSelf Controllers):**
+- `app/Http/Controllers/Api/AlumniSelf/ProfileController.php`
+- `app/Http/Controllers/Api/AlumniSelf/EmploymentHistoryController.php`
 
 **Files Modified:**
-- `app/Providers/AuthServiceProvider.php` — tambah 2 mapping policy:
-  - `Alumni::class => AlumniPolicy::class`
-  - `AlumniEmploymentHistory::class => AlumniEmploymentHistoryPolicy::class`
-- `routes/api.php` — tambah 24 route baru:
-  - Admin: `GET graduation-years`, `GET employment-stats`, `GET/POST /alumni`, `GET/PUT/DELETE/PATCH(restore) /alumni/{id}`, `GET/POST/GET/PUT/DELETE/PATCH(restore) /alumni/{alumniId}/employment-histories`, `GET /study-programs/{id}/alumni`
-  - AlumniSelf: `GET/PATCH /alumni/profile`, `PATCH /alumni/employment-status`, `GET/POST/GET/PUT/DELETE/PATCH(restore) /alumni/employment-histories`
+- `app/Providers/AuthServiceProvider.php` — tambah 2 mapping policy
+- `routes/api.php` — tambah 24 route baru (15 Admin + 9 AlumniSelf)
 
 ---
 
-### Database Changes
-- Tidak ada migration baru — migration alumni sudah ada dari Phase 1 skeleton dan sudah diverifikasi lengkap
+### Ringkasan Perubahan Phase 3A
 
-### API Changes — Admin
-- `GET    /api/v1/admin/alumni` — daftar alumni (filter: search, study_program_id, faculty_id, graduation_year, employment_status, is_employed, gender, with_trashed)
-- `POST   /api/v1/admin/alumni` — tambah alumni baru
-- `GET    /api/v1/admin/alumni/graduation-years` — list tahun wisuda (dropdown)
-- `GET    /api/v1/admin/alumni/employment-stats` — statistik status pekerjaan
-- `GET    /api/v1/admin/alumni/{id}` — detail alumni + relasi lengkap
-- `PUT    /api/v1/admin/alumni/{id}` — update alumni (partial)
-- `DELETE /api/v1/admin/alumni/{id}` — soft delete (guard: ada tracer study)
-- `PATCH  /api/v1/admin/alumni/{id}/restore` — restore alumni
-- `GET    /api/v1/admin/study-programs/{studyProgramId}/alumni` — alumni per prodi
-- `GET    /api/v1/admin/alumni/{alumniId}/employment-histories` — list riwayat pekerjaan
-- `POST   /api/v1/admin/alumni/{alumniId}/employment-histories` — tambah riwayat
-- `GET    /api/v1/admin/alumni/{alumniId}/employment-histories/{id}` — detail riwayat
-- `PUT    /api/v1/admin/alumni/{alumniId}/employment-histories/{id}` — update riwayat
-- `DELETE /api/v1/admin/alumni/{alumniId}/employment-histories/{id}` — hapus riwayat
-- `PATCH  /api/v1/admin/alumni/{alumniId}/employment-histories/{id}/restore` — restore riwayat
-
-### API Changes — Alumni Self-Service
-- `GET    /api/v1/alumni/profile` — lihat profil diri sendiri
-- `PATCH  /api/v1/alumni/profile` — update field kontak (bukan akademik)
-- `PATCH  /api/v1/alumni/employment-status` — update status pekerjaan atomik
-- `GET    /api/v1/alumni/employment-histories` — list riwayat pekerjaan milik sendiri
-- `POST   /api/v1/alumni/employment-histories` — tambah riwayat baru
-- `GET    /api/v1/alumni/employment-histories/{id}` — detail (cek ownership)
-- `PUT    /api/v1/alumni/employment-histories/{id}` — update (cek ownership)
-- `DELETE /api/v1/alumni/employment-histories/{id}` — hapus (cek ownership)
-- `PATCH  /api/v1/alumni/employment-histories/{id}/restore` — restore (cek ownership)
-
-### Security Changes
-- `AlumniPolicy` — alumni hanya bisa `viewSelf` dan `updateSelf` data miliknya sendiri; admin bisa semua operasi
-- `AlumniEmploymentHistoryPolicy` — alumni hanya bisa CRUD riwayat miliknya; restore untuk alumni owner dan admin
-- Double-guard di AlumniSelf controllers: `abort_unless` ownership check SEBELUM Policy (fail-fast, cegah info disclosure)
-- `StoreAlumniRequest` / `UpdateAlumniRequest` — otorisasi `isSuperAdmin()` saja, tidak cukup login biasa
-- `UpdateProfileRequest` — alumni hanya bisa ubah field kontak, tidak bisa ubah NIM/graduation_year/study_program_id
-
-### Refactoring Notes
-- Frontend tasks 3A (7 item) di-carry-over ke Session 3B: backend selesai lebih cepat dari estimasi, tidak ada dependency yang menghalangi penutupan 3A
-
-### Konflik Diselesaikan
-- C-06: AlumniSelf controller namespace conflict — gunakan `App\Http\Controllers\Api\AlumniSelf\` terpisah
+**Total Files Created:** 16 file baru  
+**Total Files Modified:** 2 file  
+**Migration Baru:** 0 (diverifikasi dari Phase 1 skeleton)  
+**API Endpoint Baru:** 24 endpoint  
+**Konflik Diselesaikan:** C-06 (AlumniSelf namespace)  
 
 ---
 
@@ -334,17 +358,17 @@ Session 3A diselesaikan dalam 4 batch push pada 2026-06-06. Seluruh backend stac
 - Seeder: `AppSettingSeeder` — 16 setting default di 4 group
 
 ### API Changes
-- `GET  /api/v1/admin/audit-trails` — list + filter (action, user_id, model, date range)
-- `GET  /api/v1/admin/audit-trails/{id}` — detail
-- `GET  /api/v1/admin/activity-logs` — list + filter (event, causer, log_name, date range)
-- `GET  /api/v1/admin/activity-logs/{id}` — detail
-- `DELETE /api/v1/admin/activity-logs` — purge (dengan filter `before` opsional)
-- `GET  /api/v1/admin/settings` — list semua setting (grouped)
-- `GET  /api/v1/admin/settings/{group}/{key}` — satu setting
-- `PUT  /api/v1/admin/settings/{group}/{key}` — update satu setting
-- `PUT  /api/v1/admin/settings/batch` — update banyak setting sekaligus
-- `GET  /api/v1/admin/institutions/{id}/detail` — pindah ke InstitutionDetailController
-- `PUT  /api/v1/admin/institutions/{id}/detail` — upsert detail institusi
+- `GET  /api/v1/admin/audit-trails`
+- `GET  /api/v1/admin/audit-trails/{id}`
+- `GET  /api/v1/admin/activity-logs`
+- `GET  /api/v1/admin/activity-logs/{id}`
+- `DELETE /api/v1/admin/activity-logs` — purge
+- `GET  /api/v1/admin/settings`
+- `GET  /api/v1/admin/settings/{group}/{key}`
+- `PUT  /api/v1/admin/settings/{group}/{key}`
+- `PUT  /api/v1/admin/settings/batch`
+- `GET  /api/v1/admin/institutions/{id}/detail`
+- `PUT  /api/v1/admin/institutions/{id}/detail`
 
 ### Security Changes
 - `AuditTrailPolicy` — hanya `super_admin` yang bisa akses audit trail & purge activity log
