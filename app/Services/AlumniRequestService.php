@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Alumni;
 use App\Models\AlumniRequest;
 use App\Models\User;
 use App\Repositories\AlumniRepository;
@@ -12,13 +13,41 @@ use Illuminate\Validation\ValidationException;
 
 class AlumniRequestService
 {
+    /**
+     * Whitelist field alumni yang boleh diubah via permohonan.
+     * Field di luar daftar ini ditolak saat approve untuk mencegah
+     * injection field sensitif (id, user_id, deleted_by, dll.).
+     *
+     * @var array<string, string>  field_name => cast_type
+     */
+    private const ALLOWED_ALUMNI_FIELDS = [
+        'name'                   => 'string',
+        'gender'                 => 'string',
+        'birth_place'            => 'string',
+        'birth_date'             => 'string',
+        'address'                => 'string',
+        'city'                   => 'string',
+        'province'               => 'string',
+        'postal_code'            => 'string',
+        'phone'                  => 'string',
+        'email'                  => 'string',
+        'graduation_year'        => 'integer',
+        'graduation_date'        => 'string',
+        'ipk'                    => 'float',
+        'thesis_title'           => 'string',
+        'is_employed'            => 'boolean',
+        'employment_status'      => 'string',
+        'waiting_period_months'  => 'integer',
+        'study_program_id'       => 'string',
+    ];
+
     public function __construct(
         protected AlumniRequestRepository $requestRepository,
         protected AlumniRepository        $alumniRepository,
         protected AuditService            $auditService
     ) {}
 
-    // ─── Read ─────────────────────────────────────────────────────────────────
+    // ─── Read ────────────────────────────────────────────────────────────────────────
 
     public function paginate(
         int    $perPage = 15,
@@ -48,10 +77,10 @@ class AlumniRequestService
         return $this->requestRepository->countByStatus();
     }
 
-    // ─── Write ───────────────────────────────────────────────────────────────
+    // ─── Write ──────────────────────────────────────────────────────────────────────
 
     /**
-     * Alumni mengajukan permohonan perubahan data.
+     * Alumni atau admin mengajukan permohonan perubahan data.
      * Validasi: alumni harus exist + tidak boleh ada permohonan pending
      * untuk field_name yang sama.
      */
@@ -102,13 +131,44 @@ class AlumniRequestService
     }
 
     /**
-     * Admin menyetujui permohonan.
-     * Jika type update_akademik atau update_profil, terapkan perubahan ke tabel alumni.
+     * Update permohonan yang masih menunggu (admin atau pemilik).
+     */
+    public function update(
+        AlumniRequest $alumniRequest,
+        array $validated,
+        User $actor
+    ): AlumniRequest {
+        if (! $alumniRequest->isPending()) {
+            throw ValidationException::withMessages([
+                'status' => ['Hanya permohonan berstatus menunggu yang dapat diubah.'],
+            ]);
+        }
+
+        $oldValues = $alumniRequest->toArray();
+
+        $updated = $this->requestRepository->update($alumniRequest, array_merge(
+            $validated,
+            ['updated_by' => $actor->id]
+        ));
+
+        $this->auditService->log(
+            event: 'updated',
+            auditable: $updated,
+            oldValues: $oldValues,
+            newValues: $updated->toArray(),
+            actor: $actor
+        );
+
+        return $updated;
+    }
+
+    /**
+     * Admin menyetujui permohonan dan menerapkan perubahan ke data alumni.
      */
     public function approve(
         AlumniRequest $alumniRequest,
-        User $actor,
-        ?string $notes = null
+        User          $actor,
+        ?string       $notes = null
     ): AlumniRequest {
         if (! $alumniRequest->isPending()) {
             throw ValidationException::withMessages([
@@ -118,7 +178,7 @@ class AlumniRequestService
 
         $oldValues = $alumniRequest->toArray();
 
-        // Terapkan perubahan ke data alumni jika permohonan tipe data
+        // Terapkan perubahan ke data alumni untuk tipe data (bukan tipe verifikasi)
         $applyableTypes = [
             AlumniRequest::TYPE_UPDATE_AKADEMIK,
             AlumniRequest::TYPE_UPDATE_PROFIL,
@@ -127,10 +187,7 @@ class AlumniRequestService
         if (in_array($alumniRequest->type, $applyableTypes, true)) {
             $alumni = $this->alumniRepository->findById($alumniRequest->alumni_id);
             if ($alumni) {
-                $this->alumniRepository->update($alumni, [
-                    $alumniRequest->field_name => $alumniRequest->new_value,
-                    'updated_by'               => $actor->id,
-                ]);
+                $this->applyToAlumni($alumniRequest, $alumni, $actor);
             }
         }
 
@@ -152,8 +209,8 @@ class AlumniRequestService
      */
     public function reject(
         AlumniRequest $alumniRequest,
-        User $actor,
-        ?string $notes = null
+        User          $actor,
+        ?string       $notes = null
     ): AlumniRequest {
         if (! $alumniRequest->isPending()) {
             throw ValidationException::withMessages([
@@ -178,7 +235,6 @@ class AlumniRequestService
 
     public function delete(AlumniRequest $alumniRequest, User $actor): void
     {
-        // Hanya permohonan menunggu atau ditolak yang dapat dihapus
         if ($alumniRequest->isApproved()) {
             abort(422, 'Permohonan yang sudah disetujui tidak dapat dihapus.');
         }
@@ -208,5 +264,46 @@ class AlumniRequestService
         );
 
         return $alumniRequest;
+    }
+
+    // ─── Private Helpers ──────────────────────────────────────────────────────────
+
+    /**
+     * Terapkan new_value dari AlumniRequest ke record Alumni.
+     *
+     * Keamanan:
+     *  1. Field di luar ALLOWED_ALUMNI_FIELDS ditolak (abort 422).
+     *  2. Nilai di-cast sesuai tipe kolom sebelum disimpan
+     *     (mencegah type confusion: '1' sebagai boolean, '3.5' sebagai float, dll.).
+     *  3. Update direkam dengan updated_by = actor->id untuk audit trail.
+     *
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException  jika field tidak diizinkan
+     */
+    protected function applyToAlumni(
+        AlumniRequest $alumniRequest,
+        Alumni        $alumni,
+        User          $actor
+    ): void {
+        $field = $alumniRequest->field_name;
+
+        // 1. Whitelist check
+        if (! array_key_exists($field, self::ALLOWED_ALUMNI_FIELDS)) {
+            abort(422, "Field '{$field}' tidak diizinkan untuk diubah melalui permohonan.");
+        }
+
+        // 2. Cast nilai sesuai tipe kolom
+        $castType = self::ALLOWED_ALUMNI_FIELDS[$field];
+        $castValue = match ($castType) {
+            'integer' => (int)   $alumniRequest->new_value,
+            'float'   => (float) $alumniRequest->new_value,
+            'boolean' => filter_var($alumniRequest->new_value, FILTER_VALIDATE_BOOLEAN),
+            default   =>          $alumniRequest->new_value,  // string / date tetap string
+        };
+
+        // 3. Simpan ke alumni
+        $this->alumniRepository->update($alumni, [
+            $field       => $castValue,
+            'updated_by' => $actor->id,
+        ]);
     }
 }
