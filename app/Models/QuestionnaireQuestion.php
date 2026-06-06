@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuestionnaireQuestion extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'questionnaire_questions';
 
@@ -73,8 +73,8 @@ class QuestionnaireQuestion extends Model
         return $query->where('is_active', true)->whereNull('deleted_at');
     }
 
-    public function scopeOrdered($query)
+    public function scopeRequired($query)
     {
-        return $query->orderBy('question_order');
+        return $query->where('is_required', true);
     }
 }

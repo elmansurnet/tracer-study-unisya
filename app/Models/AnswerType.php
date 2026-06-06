@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,22 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AnswerType extends Model
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUuids;
+    // Tidak ada SoftDeletes — answer_types adalah data master referensi
 
     protected $table = 'answer_types';
-
-    /**
-     * Built-in answer type codes — used as constants
-     * so that seeders and services reference one source of truth.
-     */
-    public const TEXT        = 'text';
-    public const TEXTAREA    = 'textarea';
-    public const RADIO       = 'radio';
-    public const CHECKBOX    = 'checkbox';
-    public const SELECT      = 'select';
-    public const SCALE       = 'scale';
-    public const DATE        = 'date';
-    public const NUMBER      = 'number';
 
     // ─── Mass-assignable ─────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,14 +12,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Questionnaire extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'questionnaires';
-
-    // ─── Enum constants ──────────────────────────────────────────────────────
-
-    public const RESPONDENT_TYPES = ['alumni', 'employer', 'both'];
-    public const SCOPES           = ['global', 'faculty', 'study_program'];
 
     // ─── Mass-assignable ─────────────────────────────────────────────────────
 
@@ -43,13 +38,13 @@ class Questionnaire extends Model
     // ─── Casts ───────────────────────────────────────────────────────────────
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
-        'is_active'  => 'boolean',
-        'version'    => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'deleted_at' => 'datetime',
+        'start_date'  => 'date',
+        'end_date'    => 'date',
+        'is_active'   => 'boolean',
+        'version'     => 'integer',
+        'created_at'  => 'datetime',
+        'updated_at'  => 'datetime',
+        'deleted_at'  => 'datetime',
     ];
 
     // ─── Relations ───────────────────────────────────────────────────────────
@@ -72,15 +67,14 @@ class Questionnaire extends Model
     public function questions(): HasMany
     {
         return $this->hasMany(QuestionnaireQuestion::class, 'questionnaire_id')
-                    ->orderBy('question_order');
+            ->orderBy('question_order');
     }
 
     public function activeQuestions(): HasMany
     {
         return $this->hasMany(QuestionnaireQuestion::class, 'questionnaire_id')
-                    ->where('is_active', true)
-                    ->whereNull('deleted_at')
-                    ->orderBy('question_order');
+            ->where('is_active', true)
+            ->orderBy('question_order');
     }
 
     public function tracerStudies(): BelongsToMany
@@ -91,11 +85,6 @@ class Questionnaire extends Model
             'questionnaire_id',
             'tracer_study_id'
         )->withPivot('order')->withTimestamps();
-    }
-
-    public function responses(): HasMany
-    {
-        return $this->hasMany(QuestionnaireResponse::class, 'questionnaire_id');
     }
 
     public function creator(): BelongsTo
@@ -120,23 +109,21 @@ class Questionnaire extends Model
         return $query->where('is_active', true)->whereNull('deleted_at');
     }
 
-    public function scopeByRespondentType($query, string $type)
+    public function scopeForRespondent($query, string $type)
     {
-        return $query->where('respondent_type', $type);
+        return $query->where(function ($q) use ($type) {
+            $q->where('respondent_type', $type)
+              ->orWhere('respondent_type', 'both');
+        });
     }
 
-    public function scopeByScope($query, string $scope)
-    {
-        return $query->where('scope', $scope);
-    }
+    // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    public function scopeForAlumni($query)
+    public function isAvailableNow(): bool
     {
-        return $query->whereIn('respondent_type', ['alumni', 'both']);
-    }
-
-    public function scopeForEmployer($query)
-    {
-        return $query->whereIn('respondent_type', ['employer', 'both']);
+        $today = now()->toDateString();
+        $afterStart  = is_null($this->start_date) || $this->start_date->lte(now());
+        $beforeEnd   = is_null($this->end_date)   || $this->end_date->gte(now());
+        return $this->is_active && $afterStart && $beforeEnd;
     }
 }
