@@ -5,6 +5,152 @@
 
 ---
 
+## [2026-06-06] Phase 3B — RESMI DITUTUP — Import/Export & Permohonan Alumni — CLOSED
+
+### Ringkasan Penutupan Resmi
+
+Session 3B ditutup secara resmi pada 2026-06-06 setelah seluruh task Backend dan Frontend diselesaikan dalam 5 batch commit. Carry-over frontend 7 item dari Session 3A tuntas di Batch 1–3. Fitur Import/Export Alumni (Excel + PDF) selesai di Batch 4. AlumniRequest full-stack (Admin + Alumni Self) selesai di Batch 5.
+
+**Verifikasi Penutupan:**
+- [x] Semua task Backend 3B berstatus `[x]` di Phase Tracker
+- [x] Semua task Frontend 3B berstatus `[x]` di Phase Tracker (termasuk carry-over 3A)
+- [x] 5 Batch commit berhasil push ke `main`
+- [x] Carry-over frontend 7 item dari 3A tuntas
+- [x] Import (Laravel Excel + validasi baris) + Export (Excel + PDF A4/F4) aktif
+- [x] AlumniRequest full-stack: Repository + Service + 2 Controller + Request + Policy + Resource + 2 Vue pages
+- [x] Phase Overview diupdate: Phase 3 Selesai = 2 session
+- [x] Session 3C status diubah menjadi `🔄 AKTIF`
+
+---
+
+## [2026-06-06] Phase 3B — Import/Export & Permohonan Alumni — COMPLETE
+
+### Overview
+Session 3B diselesaikan dalam 5 batch push pada 2026-06-06. Mencakup penyelesaian seluruh carry-over frontend dari Session 3A (Batch 1–3), implementasi Import/Export Alumni (Batch 4), dan AlumniRequest full-stack (Batch 5).
+
+---
+
+### Batch 1 — Frontend Carry-Over 3A: Pinia Store + Halaman Daftar Admin Alumni
+**Commit:** useAlumniStore + AlumniListPage (admin)
+
+**Files Created:**
+- `resources/js/stores/useAlumniStore.js` — Pinia store: fetchAlumni (multi-filter), fetchAlumniDetail, createAlumni, updateAlumni, deleteAlumni, restoreAlumni, fetchGraduationYears, fetchEmploymentStats, fetchByStudyProgram
+- `resources/js/pages/admin/alumni/AlumniListPage.vue` — tabel alumni dengan filter: Fakultas (select), Prodi (select, cascade), Tahun Lulus (select), Status Kerja (select); pagination; tombol tambah, edit, hapus, restore; konfirmasi dialog sebelum hapus/restore
+
+---
+
+### Batch 2 — Frontend Carry-Over 3A: Detail Alumni + Tab Pekerjaan + AlumniCard + Form Stepper
+**Commit:** AlumniDetailPage + AlumniEmploymentTab + AlumniCard + AlumniFormStepper
+
+**Files Created:**
+- `resources/js/pages/admin/alumni/AlumniDetailPage.vue` — halaman detail alumni: informasi lengkap + tab pekerjaan; breadcrumb; tombol edit, hapus, restore
+- `resources/js/pages/admin/alumni/AlumniEmploymentTab.vue` — list riwayat pekerjaan alumni (dalam tab di DetailPage); form tambah/edit riwayat pekerjaan inline; tandai current job; soft delete + restore
+- `resources/js/components/alumni/AlumniCard.vue` — komponen card alumni reusable: avatar, nama, NIM, prodi, tahun lulus, badge status kerja; slot action
+- `resources/js/pages/admin/alumni/AlumniFormStepper.vue` — form 3 langkah: (1) Data Pribadi, (2) Data Akademik, (3) Status Pekerjaan; validasi per langkah sebelum next; digunakan untuk Buat dan Edit alumni
+
+---
+
+### Batch 3 — Frontend Carry-Over 3A: Halaman Alumni Self-Service
+**Commit:** AlumniProfilePage + AlumniEmploymentPage (self-service) + integrasi router
+
+**Files Created:**
+- `resources/js/pages/alumni/AlumniProfilePage.vue` — halaman profil diri alumni: tampilkan semua data pribadi + akademik; form edit hanya field kontak (phone, address, city, province, postal_code); upload foto profil; update status pekerjaan atomik
+- `resources/js/pages/alumni/AlumniEmploymentPage.vue` — halaman riwayat pekerjaan alumni self-service: list riwayat + form tambah/edit/hapus/restore milik sendiri; badge "Pekerjaan Saat Ini"
+
+**Files Modified:**
+- `resources/js/router/index.js` — tambah routes: `/admin/alumni`, `/admin/alumni/:id`, `/alumni/profil`, `/alumni/pekerjaan` dengan guard role yang sesuai
+
+---
+
+### Batch 4 — Import/Export Backend + Frontend
+**Commit:** AlumniImport + AlumniExport + AlumniPdfExport + 3 endpoint + ImportModal + ExportButton
+
+**Files Created (Backend):**
+- `app/Imports/AlumniImport.php` — Laravel Excel import class: validasi baris per baris (NIM unique, email unique, graduation_year valid, ipk max 4.00, enum fields); collect errors per baris; return `RowImported` event per baris sukses; `WithValidation`, `WithBatchInserts`, `WithChunkReading` (chunk 200)
+- `app/Exports/AlumniExport.php` — Laravel Excel export: filter (study_program_id, faculty_id, graduation_year, employment_status); header row; format kolom sesuai tabel alumni; `WithHeadings`, `WithMapping`, `WithStyles`
+- `app/Exports/AlumniPdfExport.php` — DomPDF export: template Blade `alumni-export.blade.php`; mendukung ukuran A4 dan F4 via query param `?size=a4|f4`; header universitas dari `app_settings`
+- `resources/views/exports/alumni-export.blade.php` — template Blade PDF: tabel alumni dengan header universitas, tanggal cetak, watermark; responsive untuk A4 dan F4
+- `app/Http/Controllers/Api/Admin/AlumniImportExportController.php` — 3 method: `import` (handle upload + validasi + return errors), `exportExcel` (stream download), `exportPdf` (stream download)
+
+**Files Created (Frontend):**
+- `resources/js/components/alumni/ImportModal.vue` — modal upload Excel: drag-and-drop area; preview nama file; validasi ekstensi .xlsx/.xls client-side; progress upload; tampilkan error per baris jika ada; link download template
+- `resources/js/components/alumni/ExportButton.vue` — dropdown button: pilihan Excel / PDF A4 / PDF F4; trigger download via endpoint; loading state per opsi
+
+**Files Modified:**
+- `routes/api.php` — tambah 3 route:
+  - `POST   /api/v1/admin/alumni/import`
+  - `GET    /api/v1/admin/alumni/export/excel`
+  - `GET    /api/v1/admin/alumni/export/pdf`
+- `resources/js/pages/admin/alumni/AlumniListPage.vue` — integrasi `ImportModal` dan `ExportButton`
+
+**Database Changes:**
+- Tidak ada migration baru
+
+**API Changes:**
+- `POST   /api/v1/admin/alumni/import` — upload file Excel, return `{imported: N, errors: [{row, field, message}]}`
+- `GET    /api/v1/admin/alumni/export/excel` — stream download .xlsx dengan filter opsional
+- `GET    /api/v1/admin/alumni/export/pdf` — stream download .pdf, param `?size=a4|f4`
+
+---
+
+### Batch 5 — AlumniRequest Full-Stack (Permohonan Alumni)
+**Commit:** AlumniRequest Repository + Service + Controller (Admin+Alumni) + Request + Policy + Resource + 2 Vue pages
+
+**Files Created (Backend):**
+- `app/Models/AlumniRequest.php` — HasUlids, SoftDeletes, relasi `alumni`, `reviewer`; STATUSES constants (pending, approved, rejected); scope `pending()`, `byAlumni()`
+- `database/migrations/2026_06_04_000012_create_alumni_requests_table.php` — tabel `alumni_requests`: id, alumni_id, type (update_profile/update_employment), payload (JSON), status (enum), notes, reviewed_by, reviewed_at, timestamps, softDeletes
+- `app/Repositories/AlumniRequestRepository.php` — paginate (filter: status, alumni_id, type, date_range), findById, pendingForAlumni, create, approve (update status+reviewer+reviewed_at), reject, softDelete
+- `app/Services/AlumniRequestService.php` — create (validasi: alumni tidak bisa buat request saat ada pending sejenis), approve (apply payload ke model Alumni atomik), reject, paginate, findOrFail
+- `app/Http/Controllers/Api/Admin/AlumniRequestController.php` — 5 method: index (filter+paginate), show, approve, reject, destroy
+- `app/Http/Controllers/Api/AlumniSelf/AlumniRequestController.php` — 3 method: index (milik sendiri), store (buat permohonan baru), show (detail milik sendiri)
+- `app/Http/Requests/Admin/ApproveAlumniRequestRequest.php` — validasi notes opsional
+- `app/Http/Requests/Admin/RejectAlumniRequestRequest.php` — notes wajib saat reject
+- `app/Http/Requests/AlumniSelf/StoreAlumniRequestRequest.php` — validasi type + payload sesuai type; cek tidak ada pending request sejenis
+- `app/Policies/AlumniRequestPolicy.php` — viewAny/view (admin + alumni self), create (alumni self), approve/reject (admin), delete (admin)
+- `app/Http/Resources/AlumniRequestResource.php` — semua field + whenLoaded alumni (nama, nim) + whenLoaded reviewer (nama)
+
+**Files Created (Frontend):**
+- `resources/js/pages/alumni/AlumniRequestPage.vue` — halaman alumni self-service: list permohonan milik sendiri dengan status badge; form buat permohonan baru (pilih type, isi payload sesuai type); detail permohonan di modal
+- `resources/js/pages/admin/alumni/AlumniRequestAdminPage.vue` — halaman admin: tabel semua permohonan + filter status/type/tanggal; tombol Approve (dengan catatan opsional) dan Reject (catatan wajib); detail diff payload vs data aktual alumni di modal
+
+**Files Modified:**
+- `app/Providers/AuthServiceProvider.php` — tambah mapping `AlumniRequest::class => AlumniRequestPolicy::class`
+- `routes/api.php` — tambah 8 route:
+  - Admin: `GET/GET/PATCH/PATCH/DELETE` alumni-requests
+  - AlumniSelf: `GET/POST/GET` alumni-requests
+- `database/seeders/DatabaseSeeder.php` — tidak ada seeder baru untuk AlumniRequest
+- `resources/js/router/index.js` — tambah routes `/alumni/permohonan` dan `/admin/permohonan-alumni`
+
+**Database Changes:**
+- Migration baru: `2026_06_04_000012_create_alumni_requests_table.php`
+
+**API Changes (Batch 5):**
+- `GET    /api/v1/admin/alumni-requests` — list semua permohonan (filter: status, type, alumni_id, date)
+- `GET    /api/v1/admin/alumni-requests/{id}` — detail permohonan + diff payload
+- `PATCH  /api/v1/admin/alumni-requests/{id}/approve` — setujui + apply payload ke alumni
+- `PATCH  /api/v1/admin/alumni-requests/{id}/reject` — tolak dengan catatan wajib
+- `DELETE /api/v1/admin/alumni-requests/{id}` — soft delete
+- `GET    /api/v1/alumni/requests` — list permohonan milik alumni sendiri
+- `POST   /api/v1/alumni/requests` — buat permohonan baru
+- `GET    /api/v1/alumni/requests/{id}` — detail permohonan milik sendiri
+
+**Security Changes (Batch 5):**
+- `AlumniRequestPolicy` — alumni hanya bisa lihat dan buat request miliknya; admin melakukan approve/reject
+- `AlumniRequestService.create()` — guard: cegah duplikasi request pending sejenis (satu alumni tidak bisa punya 2 pending request dengan type sama)
+- `ApproveAlumniRequestRequest` — approve atomik: payload di-apply ke model Alumni dalam satu transaksi DB
+- `StoreAlumniRequestRequest` — validasi payload berbeda per type (update_profile vs update_employment) — gagal validasi bila type tidak dikenali
+
+---
+
+### Ringkasan Perubahan Phase 3B
+
+**Total Files Created:** 25 file baru  
+**Total Files Modified:** 6 file  
+**Migration Baru:** 1 (`create_alumni_requests_table`)  
+**API Endpoint Baru:** 11 endpoint (3 import/export + 8 alumni-requests)  
+
+---
+
 ## [2026-06-06] Phase 3A — RESMI DITUTUP — CRUD Alumni Dasar (Backend Full-Stack) — CLOSED
 
 ### Ringkasan Penutupan Resmi
