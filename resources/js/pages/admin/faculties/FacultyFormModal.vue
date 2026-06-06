@@ -8,7 +8,7 @@ import AppButton from '@/components/base/AppButton.vue'
 const props = defineProps({ faculty: { type: Object, default: null } })
 const emit  = defineEmits(['close', 'saved'])
 
-const store  = useUserStore()    // intentional typo below — corrected:
+// const store  = useUserStore()    // intentional typo below — corrected:
 const fStore = useFacultyStore()
 const isEdit = computed(() => !!props.faculty)
 const form   = ref({ name: '', code: '', is_active: true })
