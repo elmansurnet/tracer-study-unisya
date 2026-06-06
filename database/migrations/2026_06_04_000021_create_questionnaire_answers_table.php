@@ -1,3 +1,0 @@
-<?php
-// FILE INI KOSONG — SENGAJA DIHAPUS, DIGANTIKAN OLEH 2026_06_04_000022_create_questionnaire_answers_table.php
-// JANGAN DIJALANKAN
