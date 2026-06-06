@@ -147,8 +147,7 @@
 ---
 
 ### ✅ SESSION 3A — CRUD Alumni Dasar
-
-**Status:** ✅ SELESAI — 2026-06-06  
+**Status:** ✅ SELESAI — 2026-06-06 (RESMI DITUTUP 2026-06-06)
 **Commit Batch 1:** Migration + Model + Repository  
 **Commit Batch 2:** Service + AlumniEmploymentHistoryRepository + Service  
 **Commit Batch 3:** Requests (Admin + AlumniSelf) + Resources + Policies  
@@ -179,7 +178,7 @@
 - [x] `AuthServiceProvider` — tambah mapping `Alumni::class => AlumniPolicy::class` dan `AlumniEmploymentHistory::class => AlumniEmploymentHistoryPolicy::class`
 - [x] `routes/api.php` — 15 route baru admin alumni + 9 route alumni self-service
 
-#### Frontend Tasks _(direncanakan di session berikutnya)_
+#### Frontend Tasks _(dipindahkan ke Session 3B/3C)_
 
 - [ ] Halaman `/admin/alumni` — tabel dengan filter (Fakultas, Prodi, Tahun Lulus, Status)
 - [ ] Halaman `/admin/alumni/:id` — detail alumni + tab pekerjaan
@@ -189,13 +188,14 @@
 - [ ] Halaman `/alumni/pekerjaan` — riwayat pekerjaan
 - [ ] Pinia store: `useAlumniStore`
 
-**Checkpoint tambahan (dari implementasi aktual):**
-- [x] AlumniSelf namespace controller baru: `App\Http\Controllers\Api\AlumniSelf\`
-- [x] Double-guard ownership pada semua AlumniSelf controllers (`abort_unless alumni_id === user->alumni->id`)
-- [x] Business rule `one-current-job` di AlumniEmploymentHistoryService::create() + update()
-- [x] Auto-sync `alumni.is_employed` saat riwayat pekerjaan dibuat/diupdate/dihapus/restore
-- [x] Admin route nested: `GET /admin/study-programs/{studyProgramId}/alumni` untuk dropdown
-- [x] `AlumniService::delete()` — guard: cegah hapus jika masih ada data tracer study terkait
+**Checkpoint Resmi Penutupan 3A — 2026-06-06:**
+> ✅ Semua backend task 3A telah selesai dan terverifikasi push ke repository.
+> ✅ 4 Batch commit berhasil: Model+Repository → Service → Request+Resource+Policy → Controller+Routes.
+> ✅ Business rules kritis terpenuhi: one-current-job, auto-sync is_employed, double-guard ownership, guard delete tracer study.
+> ✅ Namespace `Api\AlumniSelf\` berhasil dibuat terpisah dari `Api\Admin\` (resolusi C-06).
+> ✅ 24 route API baru terdaftar di `routes/api.php` (15 Admin + 9 AlumniSelf).
+> ⚠️ Frontend tasks (7 item) dipindahkan ke Session 3B/3C — tidak menghalangi penutupan 3A karena scope 3A = backend.
+> 🔒 **Session 3A RESMI DITUTUP. Lanjut ke Session 3B.**
 
 **Catatan Sesi 3A:**
 > Session 3A diselesaikan dalam 4 batch pada 2026-06-06.
@@ -210,7 +210,7 @@
 
 ### SESSION 3B — Import/Export & Permohonan Alumni
 
-**Status:** ⬜ Belum Dimulai
+**Status:** 🔄 AKTIF — Dimulai 2026-06-06
 
 #### Backend Tasks
 
@@ -228,8 +228,15 @@
 - [ ] Policy: `AlumniRequestPolicy`
 - [ ] Resource: `AlumniRequestResource`
 
-#### Frontend Tasks
+#### Frontend Tasks (termasuk carry-over dari 3A)
 
+- [ ] Halaman `/admin/alumni` — tabel dengan filter (Fakultas, Prodi, Tahun Lulus, Status) _(carry-over 3A)_
+- [ ] Halaman `/admin/alumni/:id` — detail alumni + tab pekerjaan _(carry-over 3A)_
+- [ ] Form step-by-step: Buat & Edit Alumni (3 langkah) _(carry-over 3A)_
+- [ ] Komponen `AlumniCard.vue` _(carry-over 3A)_
+- [ ] Halaman `/alumni/profil` — profil diri alumni _(carry-over 3A)_
+- [ ] Halaman `/alumni/pekerjaan` — riwayat pekerjaan _(carry-over 3A)_
+- [ ] Pinia store: `useAlumniStore` _(carry-over 3A)_
 - [ ] Tombol Import Excel + modal upload + preview error validasi
 - [ ] Komponen `ExportButton.vue` (dropdown: Excel/PDF, ukuran A4/F4)
 - [ ] Halaman `/alumni/permohonan` — list permohonan + form buat permohonan
@@ -795,6 +802,7 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 | 2026-06-06 | 3A | AlumniSelf controller gunakan namespace `Api\AlumniSelf\` terpisah | Menghindari naming conflict dengan Admin namespace; akses kontrol lebih jelas |
 | 2026-06-06 | 3A | Employment tracking backend digabung di 3A (bukan 3C) | Menghindari dependency gap — AlumniService butuh HistoryService sejak awal |
 | 2026-06-06 | 3A | Double-guard ownership di AlumniSelf controllers | `abort_unless` cek kepemilikan SEBELUM Policy untuk fail-fast dan mencegah info disclosure |
+| 2026-06-06 | 3A→3B | Frontend Alumni (7 komponen) carry-over ke 3B | Backend 3A selesai lebih cepat; frontend dikerjakan berbarengan dengan fitur 3B |
 
 ---
 
