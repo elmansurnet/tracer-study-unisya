@@ -11,7 +11,7 @@
 |-------|------|-----------|---------|--------|
 | Phase 1 | Fondasi Sistem | 3 | 3| ✅ SELESAI |
 | Phase 2 | Data Master | 3 | 3 | ✅ SELESAI |
-| Phase 3 | Manajemen Alumni | 3 | 0 | ⬜ Belum Dimulai |
+| Phase 3 | Manajemen Alumni | 3 | 1 | 🔄 Dalam Pengerjaan |
 | Phase 4 | Mesin Kuesioner | 3 | 0 | ⬜ Belum Dimulai |
 | Phase 5 | Tracer Study & Employer | 3 | 0 | ⬜ Belum Dimulai |
 | Phase 6 | Notifikasi & Integrasi | 3 | 0 | ⬜ Belum Dimulai |
@@ -146,25 +146,40 @@
 
 ---
 
-### SESSION 3A — CRUD Alumni Dasar
+### ✅ SESSION 3A — CRUD Alumni Dasar
 
-**Status:** ⬜ Belum Dimulai
+**Status:** ✅ SELESAI — 2026-06-06  
+**Commit Batch 1:** Migration + Model + Repository  
+**Commit Batch 2:** Service + AlumniEmploymentHistoryRepository + Service  
+**Commit Batch 3:** Requests (Admin + AlumniSelf) + Resources + Policies  
+**Commit Batch 4:** Controllers (Admin + AlumniSelf) + AuthServiceProvider + routes/api.php  
 
 #### Backend Tasks
 
-- [ ] Model `Alumni` + `AlumniEmploymentHistory` + `AlumniRequest`
-- [ ] `AlumniRepository` + `AlumniService`
-- [ ] `AlumniController` (Admin) — CRUD + filter + search
-- [ ] Form Request: `StoreAlumniRequest`, `UpdateAlumniRequest`
-- [ ] Policy: `AlumniPolicy`
-- [ ] Resource: `AlumniResource`, `AlumniDetailResource`
-- [ ] `AlumniController` (Alumni Self) — profile, employment
-- [ ] Form Request: `UpdateAlumniProfileRequest`
-- [ ] File upload foto alumni (simpan di `storage/app/private/alumni/photos`)
-- [ ] Seeder: `AlumniSeeder` (data dummy)
-- [ ] Factory: `AlumniFactory`
+- [x] Model `Alumni` — HasUlids, SoftDeletes, audit fields, relasi `studyProgram`, `user`, `employmentHistories`, `tracerStudies`
+- [x] Model `AlumniEmploymentHistory` — HasUlids, SoftDeletes, relasi `alumni`, `institution`, `profession`
+- [x] Migration `create_alumni_table` — sudah ada dari Phase 1 skeleton, diverifikasi lengkap
+- [x] Migration `create_alumni_employment_histories_table` — sudah ada dari Phase 1 skeleton, diverifikasi lengkap
+- [x] `AlumniRepository` — paginate (multi-filter), findById, findByNim, byStudyProgram, byGraduationYear, countByEmploymentStatus, graduationYears, create, update, softDelete, restore
+- [x] `AlumniEmploymentHistoryRepository` — paginate, findById, byAlumni, currentForAlumni, clearCurrentForAlumni, create, update, softDelete, restore
+- [x] `AlumniService` — create, update, updateEmploymentStatus (atomik), delete (guard tracer study), restore, paginate, findOrFail, byStudyProgram, byGraduationYear, countByEmploymentStatus, graduationYears
+- [x] `AlumniEmploymentHistoryService` — create (one-current rule), update (is_current conflict), delete (sync is_employed), restore (sync is_employed), syncAlumniEmploymentStatus (private)
+- [x] Form Request Admin: `StoreAlumniRequest`, `UpdateAlumniRequest`
+- [x] Form Request Admin: `StoreAlumniEmploymentHistoryRequest`, `UpdateAlumniEmploymentHistoryRequest`
+- [x] Form Request AlumniSelf: `UpdateProfileRequest` (hanya field kontak), `UpdateEmploymentRequest`
+- [x] Form Request AlumniSelf: `StoreEmploymentHistoryRequest`, `UpdateEmploymentHistoryRequest`
+- [x] Policy: `AlumniPolicy` — viewAny/view/create/update/updateSelf/delete/restore
+- [x] Policy: `AlumniEmploymentHistoryPolicy` — viewAny/view/create/update/delete/restore (alumni self vs admin)
+- [x] Resource: `AlumniResource` — semua field + whenLoaded relations (anti-N+1)
+- [x] Resource: `AlumniEmploymentHistoryResource` — semua field + whenLoaded relations
+- [x] `AlumniController` (Admin) — index, graduationYears, employmentStats, byStudyProgram, store, show, update, destroy, restore
+- [x] `AlumniEmploymentHistoryController` (Admin) — index, store, show, update, destroy, restore (nested di bawah alumni/{alumniId})
+- [x] `ProfileController` (AlumniSelf) — show, update, updateEmploymentStatus
+- [x] `EmploymentHistoryController` (AlumniSelf) — index, store, show, update, destroy, restore
+- [x] `AuthServiceProvider` — tambah mapping `Alumni::class => AlumniPolicy::class` dan `AlumniEmploymentHistory::class => AlumniEmploymentHistoryPolicy::class`
+- [x] `routes/api.php` — 15 route baru admin alumni + 9 route alumni self-service
 
-#### Frontend Tasks
+#### Frontend Tasks _(direncanakan di session berikutnya)_
 
 - [ ] Halaman `/admin/alumni` — tabel dengan filter (Fakultas, Prodi, Tahun Lulus, Status)
 - [ ] Halaman `/admin/alumni/:id` — detail alumni + tab pekerjaan
@@ -174,8 +189,22 @@
 - [ ] Halaman `/alumni/pekerjaan` — riwayat pekerjaan
 - [ ] Pinia store: `useAlumniStore`
 
+**Checkpoint tambahan (dari implementasi aktual):**
+- [x] AlumniSelf namespace controller baru: `App\Http\Controllers\Api\AlumniSelf\`
+- [x] Double-guard ownership pada semua AlumniSelf controllers (`abort_unless alumni_id === user->alumni->id`)
+- [x] Business rule `one-current-job` di AlumniEmploymentHistoryService::create() + update()
+- [x] Auto-sync `alumni.is_employed` saat riwayat pekerjaan dibuat/diupdate/dihapus/restore
+- [x] Admin route nested: `GET /admin/study-programs/{studyProgramId}/alumni` untuk dropdown
+- [x] `AlumniService::delete()` — guard: cegah hapus jika masih ada data tracer study terkait
+
 **Catatan Sesi 3A:**
-> _Isi catatan setelah sesi selesai_
+> Session 3A diselesaikan dalam 4 batch pada 2026-06-06.
+> Batch 1: Migration sudah ada dari Phase 1 skeleton — diverifikasi; Model Alumni + AlumniEmploymentHistory + Repository dibuat.
+> Batch 2: AlumniService + AlumniEmploymentHistoryService dengan business rules lengkap (one-current-job, auto-sync is_employed).
+> Batch 3: 8 Request classes (Admin + AlumniSelf) + 2 Resources + 2 Policies.
+> Batch 4: 4 Controllers (Admin & AlumniSelf namespace baru) + AuthServiceProvider update + routes/api.php update.
+> Frontend tasks dipindahkan ke session berikutnya (3B atau session terpisah).
+> Konflik C-06 terdeteksi dan diselesaikan: AlumniSelf controller menggunakan namespace baru `Api\AlumniSelf\` agar tidak bentrok dengan namespace Admin.
 
 ---
 
@@ -215,14 +244,16 @@
 
 **Status:** ⬜ Belum Dimulai
 
-#### Backend Tasks
+> ⚠️ **Catatan:** Employment Tracking backend (Repository, Service, Controller, Request, Policy, Resource) **sudah diselesaikan di Session 3A** sebagai bagian dari AlumniEmploymentHistory full-stack. Session 3C akan fokus pada Frontend tasks dan integrasi autocomplete.
 
-- [ ] `EmploymentRepository` + `EmploymentService`
-- [ ] `EmploymentController` (Admin & Alumni) — CRUD riwayat pekerjaan
-- [ ] Form Request: `StoreEmploymentRequest`, `UpdateEmploymentRequest`
-- [ ] Policy: `EmploymentPolicy`
-- [ ] Resource: `EmploymentResource`
-- [ ] Logika update `alumni.is_employed` dan `alumni.waiting_period_months` otomatis
+#### Backend Tasks _(sudah selesai di 3A)_
+
+- [x] `AlumniEmploymentHistoryRepository` + `AlumniEmploymentHistoryService`
+- [x] `AlumniEmploymentHistoryController` (Admin & AlumniSelf)
+- [x] Form Request: `StoreAlumniEmploymentHistoryRequest`, `UpdateAlumniEmploymentHistoryRequest`, `StoreEmploymentHistoryRequest`, `UpdateEmploymentHistoryRequest`
+- [x] Policy: `AlumniEmploymentHistoryPolicy`
+- [x] Resource: `AlumniEmploymentHistoryResource`
+- [x] Logika update `alumni.is_employed` dan `alumni.waiting_period_months` otomatis
 
 #### Frontend Tasks
 
@@ -761,6 +792,9 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 | 2026-06-04 | — | Employer token: SHA-256 hash + plain di-null | Token sekali pakai, plain dihapus setelah dikirim |
 | 2026-06-04 | — | Snapshot immutable pada questionnaire_responses | Perubahan kuesioner tidak merusak data historis |
 | 2026-06-04 | — | SoftDeletes pada semua tabel master | Data tidak pernah benar-benar terhapus permanen |
+| 2026-06-06 | 3A | AlumniSelf controller gunakan namespace `Api\AlumniSelf\` terpisah | Menghindari naming conflict dengan Admin namespace; akses kontrol lebih jelas |
+| 2026-06-06 | 3A | Employment tracking backend digabung di 3A (bukan 3C) | Menghindari dependency gap — AlumniService butuh HistoryService sejak awal |
+| 2026-06-06 | 3A | Double-guard ownership di AlumniSelf controllers | `abort_unless` cek kepemilikan SEBELUM Policy untuk fail-fast dan mencegah info disclosure |
 
 ---
 
@@ -773,7 +807,7 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 | C-03  | Seeder Fakultas/StudyProgram       | Sudah ada di repo sejak 2A            |
 | C-04  | SettingService sudah ada           | Digunakan langsung di SettingController|
 | C-05  | AppSetting/AuditTrail/InstitutionDetail Model sudah ada | Skip create, langsung buat Stack |
-
+| C-06  | AlumniSelf controller namespace conflict | Gunakan namespace `Api\AlumniSelf\` terpisah dari `Api\Admin\` |
 
 ---
 
@@ -788,5 +822,3 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 ---
 
 *File ini adalah sumber kebenaran tunggal untuk progress development. Update setiap akhir sesi.*
-
-
