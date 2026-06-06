@@ -3,19 +3,19 @@ import { ref } from 'vue'
 import http from '@/lib/http'
 
 export const useStudyProgramStore = defineStore('studyProgram', () => {
-  const programs     = ref([])
-  const pagination   = ref({})
-  const allPrograms  = ref([])   // untuk dropdown
-  const loading      = ref(false)
-  const errors       = ref({})
+  const studyPrograms = ref([])
+  const meta          = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 })
+  const allPrograms   = ref([])   // untuk dropdown
+  const loading       = ref(false)
+  const errors        = ref({})
 
-  async function fetchPrograms(params = {}) {
+  async function fetchStudyPrograms(params = {}) {
     loading.value = true
     errors.value  = {}
     try {
       const { data } = await http.get('/admin/study-programs', { params })
-      programs.value   = data.data
-      pagination.value = data.meta ?? {}
+      studyPrograms.value = data.data
+      meta.value          = data.meta ?? meta.value
     } finally {
       loading.value = false
     }
@@ -29,24 +29,25 @@ export const useStudyProgramStore = defineStore('studyProgram', () => {
     } catch {}
   }
 
-  async function createProgram(payload) {
+  async function createStudyProgram(payload) {
     errors.value = {}
     const { data } = await http.post('/admin/study-programs', payload)
     return data
   }
 
-  async function updateProgram(id, payload) {
+  async function updateStudyProgram(id, payload) {
     errors.value = {}
     const { data } = await http.put(`/admin/study-programs/${id}`, payload)
     return data
   }
 
-  async function deleteProgram(id) {
+  async function deleteStudyProgram(id) {
     const { data } = await http.delete(`/admin/study-programs/${id}`)
+    studyPrograms.value = studyPrograms.value.filter(p => p.id !== id)
     return data
   }
 
-  async function restoreProgram(id) {
+  async function restoreStudyProgram(id) {
     const { data } = await http.patch(`/admin/study-programs/${id}/restore`)
     return data
   }
@@ -56,9 +57,9 @@ export const useStudyProgramStore = defineStore('studyProgram', () => {
   }
 
   return {
-    programs, pagination, allPrograms, loading, errors,
-    fetchPrograms, fetchAllPrograms,
-    createProgram, updateProgram, deleteProgram, restoreProgram,
+    studyPrograms, meta, allPrograms, loading, errors,
+    fetchStudyPrograms, fetchAllPrograms,
+    createStudyProgram, updateStudyProgram, deleteStudyProgram, restoreStudyProgram,
     clearErrors,
   }
 })
