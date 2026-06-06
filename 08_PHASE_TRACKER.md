@@ -1,8 +1,8 @@
 # Phase Tracker — Tracer Study UNISYA
 
-> **Updated:** 2026-06-06  
-> **Last Session:** Phase 2A-2C (AUDIT)   
-> **Overall Progress:** Phase 2A-2C (AUDIT)
+> **Updated:** 2026-06-06
+> **Last Session:** Phase 2B Session B (Frontend) — Audit & Sync
+> **Overall Progress:** Phase 1 ✅ | Phase 2A ✅ | Phase 2B ✅ | Phase 2C ⬜ | Phase 3–9 ⬜
 
 ---
 
@@ -30,87 +30,102 @@
 
 ---
 
-### SESSION 2A — Manajemen Pengguna & Akademik
+## ✅ PHASE 2A — Manajemen Pengguna & Akademik (COMPLETE)
 
-**Status:** ⬜ Belum Dimulai
+**Status:** ✅ COMPLETE
 **Target:** CRUD User, Fakultas, Program Studi berfungsi penuh
 
+> **Catatan Sesi 2A (Audit 2026-06-06):**
+> Semua task backend dan frontend Phase 2A telah selesai dan terverifikasi di repository.
+> File yang ada: `FakultasRepository`, `FakultasService`, `FakultasController`, `FacultyFormModal.vue`, `useFacultyStore.js`,
+> `StudyProgramRepository`, `StudyProgramService`, `StudyProgramController`, `StudyProgramsPage.vue`, `useStudyProgramStore.js`,
+> `UserRepository`, `UserService`, `UserController`, `UsersPage.vue`, `useUserStore.js`.
+> Route `/admin/pengguna`, `/admin/fakultas`, `/admin/program-studi` sudah live.
+> **Pending (belum dikerjakan):** Seeder & Factory untuk Fakultas, Program Studi.
+
 #### Backend Tasks
 
-- [ ] `UserRepository` + `UserService`
-- [ ] `UserController` (Admin) — CRUD + reset password + toggle aktif
-- [ ] Form Request: `StoreUserRequest`, `UpdateUserRequest`, `ResetPasswordRequest`
-- [ ] Policy: `UserPolicy` (update, delete, view)
-- [ ] Resource: `UserResource`
-- [ ] `FacultyRepository` + `FacultyService`
-- [ ] `FacultyController` (Admin) — CRUD
-- [ ] Form Request: `StoreFacultyRequest`, `UpdateFacultyRequest`
-- [ ] Policy: `FacultyPolicy`
-- [ ] Resource: `FacultyResource`
-- [ ] `StudyProgramRepository` + `StudyProgramService`
-- [ ] `StudyProgramController` (Admin) — CRUD
-- [ ] Form Request: `StoreStudyProgramRequest`, `UpdateStudyProgramRequest`
-- [ ] Policy: `StudyProgramPolicy`
-- [ ] Resource: `StudyProgramResource`
-- [ ] Seeder: `FacultySeeder` (data UNISYA)
-- [ ] Seeder: `StudyProgramSeeder` (data UNISYA)
-- [ ] Factory: `FacultyFactory`, `StudyProgramFactory`
+- [x] `UserRepository` + `UserService`
+- [x] `UserController` (Admin) — CRUD + reset password + toggle aktif
+- [x] Form Request: `StoreUserRequest`, `UpdateUserRequest`, `ResetPasswordRequest`
+- [x] Policy: `UserPolicy` (update, delete, view)
+- [x] Resource: `UserResource`
+- [x] `FacultyRepository` + `FacultyService`
+- [x] `FacultyController` (Admin) — CRUD
+- [x] Form Request: `StoreFacultyRequest`, `UpdateFacultyRequest`
+- [x] Policy: `FacultyPolicy`
+- [x] Resource: `FacultyResource`
+- [x] `StudyProgramRepository` + `StudyProgramService`
+- [x] `StudyProgramController` (Admin) — CRUD
+- [x] Form Request: `StoreStudyProgramRequest`, `UpdateStudyProgramRequest`
+- [x] Policy: `StudyProgramPolicy`
+- [x] Resource: `StudyProgramResource`
+- [ ] Seeder: `FacultySeeder` (data UNISYA) — **PENDING**
+- [ ] Seeder: `StudyProgramSeeder` (data UNISYA) — **PENDING**
+- [ ] Factory: `FacultyFactory`, `StudyProgramFactory` — **PENDING**
 
 #### Frontend Tasks
 
-- [ ] Halaman `/admin/pengguna` — tabel user (sortable, searchable, paginated)
-- [ ] Form modal/drawer: Buat & Edit User
-- [ ] Komponen `AppTable.vue` (sort, pagination, empty state, skeleton)
-- [ ] Komponen `AppPagination.vue`
-- [ ] Halaman `/admin/fakultas` — tabel + CRUD modal
-- [ ] Halaman `/admin/program-studi` — tabel + CRUD modal (filter by fakultas)
-- [ ] Pinia store: `useUserStore`, `useFacultyStore`, `useStudyProgramStore`
-
-**Catatan Sesi 2A:**
-> _Isi catatan setelah sesi selesai_
+- [x] Halaman `/admin/pengguna` — tabel user (sortable, searchable, paginated)
+- [x] Form modal/drawer: Buat & Edit User
+- [x] Komponen `AppTable.vue` (sort, pagination, empty state, skeleton)
+- [x] Komponen `AppPagination.vue`
+- [x] Halaman `/admin/fakultas` — tabel + CRUD modal
+- [x] Halaman `/admin/program-studi` — tabel + CRUD modal (filter by fakultas)
+- [x] Pinia store: `useUserStore`, `useFacultyStore`, `useStudyProgramStore`
 
 ---
 
-### SESSION 2B — Manajemen Profesi & Institusi
+## ✅ PHASE 2B — Manajemen Profesi & Institusi (COMPLETE)
 
-**Status:** ⬜ Belum Dimulai
+**Status:** ✅ COMPLETE
 **Target:** CRUD Profesi dan Institusi berfungsi penuh
 
+> **Catatan Sesi 2B (Audit 2026-06-06):**
+> Semua task backend dan frontend Phase 2B telah selesai dan terverifikasi di repository.
+> File yang ada: `ProfessionCategoryRepository`, `ProfessionCategoryService`, `ProfessionCategoryController`, `ProfessionCategoriesPage.vue`, `useProfessionCategoryStore.js`,
+> `ProfessionRepository`, `ProfessionService`, `ProfessionController`, `ProfessionsPage.vue`, `useProfessionStore.js`,
+> `InstitutionRepository`, `InstitutionService`, `InstitutionController`, `InstitutionsPage.vue`, `useInstitutionStore.js`.
+> Route `/admin/kategori-profesi`, `/admin/profesi`, `/admin/institusi` sudah live.
+> **Pending (belum dikerjakan):** `InstitutionDetailController` + Request + Resource, Tab "Detail Institusi", `useProfessionCategoryStore` (sudah ada), Seeder.
+> **Keputusan:** `InstitutionDetail` bersifat opsional untuk MVP — akan dikerjakan di Phase 2C atau digabung saat Phase 3.
+
 #### Backend Tasks
 
-- [ ] `ProfessionCategoryRepository` + `ProfessionCategoryService`
-- [ ] `ProfessionCategoryController` — CRUD
-- [ ] Form Request: `StoreProfessionCategoryRequest`, `UpdateProfessionCategoryRequest`
-- [ ] Resource: `ProfessionCategoryResource`
-- [ ] `ProfessionRepository` + `ProfessionService`
-- [ ] `ProfessionController` — CRUD
-- [ ] Form Request: `StoreProfessionRequest`, `UpdateProfessionRequest`
-- [ ] Resource: `ProfessionResource`
-- [ ] `InstitutionRepository` + `InstitutionService`
-- [ ] `InstitutionController` — CRUD + detail
-- [ ] `InstitutionDetailController` — CRUD
-- [ ] Form Request: `StoreInstitutionRequest`, `UpdateInstitutionRequest`
-- [ ] Form Request: `StoreInstitutionDetailRequest`, `UpdateInstitutionDetailRequest`
-- [ ] Resource: `InstitutionResource`, `InstitutionDetailResource`
-- [ ] Seeder: `ProfessionCategorySeeder`, `ProfessionSeeder`
+- [x] `ProfessionCategoryRepository` + `ProfessionCategoryService`
+- [x] `ProfessionCategoryController` — CRUD
+- [x] Form Request: `StoreProfessionCategoryRequest`, `UpdateProfessionCategoryRequest`
+- [x] Resource: `ProfessionCategoryResource`
+- [x] `ProfessionRepository` + `ProfessionService`
+- [x] `ProfessionController` — CRUD
+- [x] Form Request: `StoreProfessionRequest`, `UpdateProfessionRequest`
+- [x] Resource: `ProfessionResource`
+- [x] `InstitutionRepository` + `InstitutionService`
+- [x] `InstitutionController` — CRUD + detail
+- [ ] `InstitutionDetailController` — CRUD — **PENDING (dikerjakan di 2C)**
+- [ ] Form Request: `StoreInstitutionDetailRequest`, `UpdateInstitutionDetailRequest` — **PENDING (dikerjakan di 2C)**
+- [ ] Resource: `InstitutionDetailResource` — **PENDING (dikerjakan di 2C)**
+- [x] Form Request: `StoreInstitutionRequest`, `UpdateInstitutionRequest`
+- [x] Resource: `InstitutionResource`
+- [ ] Seeder: `ProfessionCategorySeeder`, `ProfessionSeeder` — **PENDING**
 
 #### Frontend Tasks
 
-- [ ] Halaman `/admin/kategori-profesi` — tabel + CRUD
-- [ ] Halaman `/admin/profesi` — tabel + CRUD (filter by kategori)
-- [ ] Halaman `/admin/institusi` — tabel + CRUD
-- [ ] Tab "Detail Institusi" dalam halaman detail institusi
-- [ ] Pinia store: `useProfessionStore`, `useInstitutionStore`
-
-**Catatan Sesi 2B:**
-> _Isi catatan setelah sesi selesai_
+- [x] Halaman `/admin/kategori-profesi` — tabel + CRUD
+- [x] Halaman `/admin/profesi` — tabel + CRUD (filter by kategori)
+- [x] Halaman `/admin/institusi` — tabel + CRUD
+- [ ] Tab "Detail Institusi" dalam halaman detail institusi — **PENDING (dikerjakan di 2C)**
+- [x] Pinia store: `useProfessionCategoryStore`, `useProfessionStore`, `useInstitutionStore`
 
 ---
 
-### SESSION 2C — Audit, Notifikasi & Pengaturan Awal
+## ⬜ PHASE 2C — Audit, Notifikasi & Pengaturan Awal
 
 **Status:** ⬜ Belum Dimulai
-**Target:** Model Observer untuk audit trail, Settings Management dasar
+**Target:** Model Observer untuk audit trail, Settings Management dasar, InstitutionDetail
+
+> **Catatan Sesi 2C:**
+> _Isi catatan setelah sesi selesai_
 
 #### Backend Tasks
 
@@ -121,6 +136,11 @@
 - [ ] `SettingController` — get all, get by group, bulk update
 - [ ] `AppSetting` Model + Seeder (settings default)
 - [ ] Model Observer terdaftar di `AppServiceProvider`
+- [ ] `InstitutionDetailController` — CRUD (carry-over dari 2B)
+- [ ] Form Request: `StoreInstitutionDetailRequest`, `UpdateInstitutionDetailRequest` (carry-over dari 2B)
+- [ ] Resource: `InstitutionDetailResource` (carry-over dari 2B)
+- [ ] Seeder: `FacultySeeder`, `StudyProgramSeeder` (carry-over dari 2A)
+- [ ] Seeder: `ProfessionCategorySeeder`, `ProfessionSeeder` (carry-over dari 2B)
 
 #### Frontend Tasks
 
@@ -128,9 +148,7 @@
 - [ ] Halaman `/admin/activity-log` — tabel aktivitas (filter user, tanggal)
 - [ ] Halaman `/admin/pengaturan` — form settings (tab: Umum, WA Gateway, SMTP)
 - [ ] Pinia store: `useSettingStore`
-
-**Catatan Sesi 2C:**
-> _Isi catatan setelah sesi selesai_
+- [ ] Tab "Detail Institusi" dalam halaman detail institusi (carry-over dari 2B)
 
 ---
 
@@ -756,6 +774,7 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 | 2026-06-04 | — | Employer token: SHA-256 hash + plain di-null | Token sekali pakai, plain dihapus setelah dikirim |
 | 2026-06-04 | — | Snapshot immutable pada questionnaire_responses | Perubahan kuesioner tidak merusak data historis |
 | 2026-06-04 | — | SoftDeletes pada semua tabel master | Data tidak pernah benar-benar terhapus permanen |
+| 2026-06-06 | 2B | InstitutionDetail carry-over ke 2C | Fitur opsional untuk MVP; tidak memblokir 2B |
 
 ---
 
@@ -765,7 +784,9 @@ Params : api_key, sender, number, message, footer (opt), msgid (opt), full (opt)
 
 | ID | Tanggal | Deskripsi | Status | Solusi |
 |----|---------|-----------|--------|--------|
-| — | — | — | — | — |
+| C-01 | 2026-06-06 | Seeder Fakultas & StudyProgram belum dibuat di 2A | ⏳ Pending | Dikerjakan di Phase 2C sebagai carry-over |
+| C-02 | 2026-06-06 | InstitutionDetailController belum dibuat di 2B | ⏳ Pending | Dikerjakan di Phase 2C sebagai carry-over |
+| C-03 | 2026-06-06 | Tab Detail Institusi (frontend) belum dibuat di 2B | ⏳ Pending | Dikerjakan di Phase 2C sebagai carry-over |
 
 ---
 

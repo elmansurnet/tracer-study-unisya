@@ -1,8 +1,31 @@
 # Changelog — Tracer Study UNISYA
 
+> File ini mengikuti `08_PHASE_TRACKER.md` sebagai sumber kebenaran tunggal.
+> Setiap entri changelog harus selaras dengan task yang telah di-check `[x]` di Phase Tracker.
+
 ---
 
-## [Phase 2B Session B] — 2026-06-06
+## [Audit Phase 2A–2C] — 2026-06-06
+
+### Audit & Dokumentasi
+
+**Hasil Audit:**
+- Phase 2A: ✅ COMPLETE — semua task backend & frontend selesai. Pending: Seeder & Factory (carry-over ke 2C).
+- Phase 2B: ✅ COMPLETE — semua task backend & frontend selesai. Pending: InstitutionDetail + Tab UI + Seeder (carry-over ke 2C).
+- Phase 2C: ⬜ Belum Dimulai — menunggu carry-over dari 2A & 2B ditambahkan ke task list.
+
+**Files Modified:**
+- `08_PHASE_TRACKER.md` — Update status Phase 2A & 2B menjadi COMPLETE, centang semua task yang sudah selesai, tandai task pending dengan keterangan, tambah carry-over tasks ke Phase 2C, update konflik & keputusan teknis.
+- `09_CHANGELOG.md` — Sinkronisasi dengan Phase Tracker.
+
+**Konflik Terdeteksi & Dicatat:**
+- C-01: Seeder Fakultas & StudyProgram belum ada → carry-over ke Phase 2C
+- C-02: InstitutionDetailController belum ada → carry-over ke Phase 2C
+- C-03: Tab Detail Institusi (frontend) belum ada → carry-over ke Phase 2C
+
+---
+
+## [Phase 2B Session B — Frontend] — 2026-06-06
 
 ### Frontend
 
@@ -22,8 +45,6 @@
   - `admin.profession-categories` → `ProfessionCategoriesPage.vue`
   - `admin.professions` → `ProfessionsPage.vue`
   - `admin.institutions` → `InstitutionsPage.vue`
-- `08_PHASE_TRACKER.md` — Mark Phase 2B COMPLETE
-- `09_CHANGELOG.md` — Update changelog
 
 **UI/UX Notes:**
 - Semua halaman konsisten dengan pola Phase 2A (search + table + pagination + modal)
@@ -35,7 +56,7 @@
 
 ---
 
-## [Phase 2B Session A] — 2026-06-06
+## [Phase 2B Session A — Backend] — 2026-06-06
 
 ### Backend
 
@@ -86,7 +107,10 @@
 - `resources/js/pages/admin/users/UserFormModal.vue`
 
 **Files Modified:**
-- `resources/js/router/index.js` — Register routes Phase 2A
+- `resources/js/router/index.js` — Register routes Phase 2A:
+  - `admin.users` → `UsersPage.vue`
+  - `admin.faculties` → `FacultiesPage.vue`
+  - `admin.study-programs` → `StudyProgramsPage.vue`
 
 ---
 
@@ -95,6 +119,14 @@
 ### Backend
 
 **Files Created:**
+- `app/Repositories/UserRepository.php`
+- `app/Services/UserService.php`
+- `app/Http/Controllers/Admin/UserController.php`
+- `app/Http/Requests/Admin/StoreUserRequest.php`
+- `app/Http/Requests/Admin/UpdateUserRequest.php`
+- `app/Http/Requests/Admin/ResetPasswordRequest.php`
+- `app/Http/Resources/Admin/UserResource.php`
+- `app/Policies/UserPolicy.php`
 - `app/Repositories/FakultasRepository.php`
 - `app/Services/FakultasService.php`
 - `app/Http/Controllers/Admin/FakultasController.php`
@@ -102,7 +134,13 @@
 - `app/Http/Requests/Admin/UpdateFakultasRequest.php`
 - `app/Http/Resources/Admin/FakultasResource.php`
 - `app/Policies/FakultasPolicy.php`
-- *(idem untuk StudyProgram dan User)*
+- `app/Repositories/StudyProgramRepository.php`
+- `app/Services/StudyProgramService.php`
+- `app/Http/Controllers/Admin/StudyProgramController.php`
+- `app/Http/Requests/Admin/StoreStudyProgramRequest.php`
+- `app/Http/Requests/Admin/UpdateStudyProgramRequest.php`
+- `app/Http/Resources/Admin/StudyProgramResource.php`
+- `app/Policies/StudyProgramPolicy.php`
 - `routes/admin.php`
 
 ---
@@ -122,10 +160,18 @@
 ## [Phase 1 — Setup & Infrastruktur] — 2026-06-01
 
 ### Initial Setup
+
+**Backend:**
 - Laravel 12 + PHP 8.3 installed
+- Packages: spatie/laravel-permission, spatie/laravel-activitylog, laravel/sanctum
+- Base Service, Repository, Resource abstract classes
+- Exception Handler JSON response
+- Sanctum SPA authentication + OTP flow
+- Role-based middleware
+
+**Frontend:**
 - Vue 3 + Vite + Pinia + Vue Router configured
 - Base layouts: AdminLayout, AlumniLayout, EmployerLayout
 - Base components: AppButton, AppInput, AppModal, AppTable, AppPagination, AppBadge, AppConfirm
-- Auth: Sanctum SPA + OTP flow
-- Stores: auth.js, ui.js
-- Login, OTP, Dashboard pages
+- HTTP client (axios), auth store, ui store
+- Login page, OTP page, Dashboard pages (Admin + Alumni + Employer)
