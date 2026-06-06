@@ -5,6 +5,81 @@
 
 ---
 
+## [2026-06-06] Phase 2B · Session Backend — Master Data Profesi & Institusi
+
+### Files Created
+
+**Factory:**
+- `database/factories/ProfessionCategoryFactory.php`
+- `database/factories/ProfessionFactory.php`
+- `database/factories/InstitutionFactory.php`
+
+**Seeder:**
+- `database/seeders/ProfessionCategorySeeder.php` — 10 kategori profesi umum UNISYA
+- `database/seeders/ProfessionSeeder.php` — ~50 profesi sesuai kategori (lookup by name)
+- `database/seeders/InstitutionSeeder.php` — 20 institusi tempat kerja alumni
+
+**Repository:**
+- `app/Repositories/ProfessionCategoryRepository.php`
+- `app/Repositories/ProfessionRepository.php` — filter tambahan: `profession_category_id`
+- `app/Repositories/InstitutionRepository.php` — filter tambahan: `type`
+
+**Service:**
+- `app/Services/ProfessionCategoryService.php`
+- `app/Services/ProfessionService.php` — unique check per kategori (name + category_id)
+- `app/Services/InstitutionService.php` — field tambahan: type, sector, website, logo
+
+**Request:**
+- `app/Http/Requests/Admin/StoreProfessionCategoryRequest.php`
+- `app/Http/Requests/Admin/UpdateProfessionCategoryRequest.php`
+- `app/Http/Requests/Admin/StoreProfessionRequest.php`
+- `app/Http/Requests/Admin/UpdateProfessionRequest.php`
+- `app/Http/Requests/Admin/StoreInstitutionRequest.php`
+- `app/Http/Requests/Admin/UpdateInstitutionRequest.php`
+
+**Resource:**
+- `app/Http/Resources/ProfessionCategoryResource.php`
+- `app/Http/Resources/ProfessionResource.php` — include `category` via `whenLoaded`
+- `app/Http/Resources/InstitutionResource.php` — include `detail` via `whenLoaded`
+
+**Policy:**
+- `app/Policies/ProfessionCategoryPolicy.php`
+- `app/Policies/ProfessionPolicy.php`
+- `app/Policies/InstitutionPolicy.php`
+
+**Controller:**
+- `app/Http/Controllers/Api/Admin/ProfessionCategoryController.php`
+- `app/Http/Controllers/Api/Admin/ProfessionController.php` — `all()` support filter `profession_category_id`
+- `app/Http/Controllers/Api/Admin/InstitutionController.php` — include `showDetail` & `updateDetail` (placeholder 501)
+
+### Files Modified
+- `08_PHASE_TRACKER.md` — Phase 2B Backend ditandai ✅ SELESAI
+- `09_CHANGELOG.md` — Entry ini
+
+### Database Changes
+- Tidak ada perubahan schema (Migration & Model sudah ada sebelumnya)
+- Seeder baru siap dijalankan: `ProfessionCategorySeeder`, `ProfessionSeeder`, `InstitutionSeeder`
+
+### API Changes
+- Routes sudah terdaftar sebelumnya di `routes/api.php`
+- Endpoint baru aktif:
+  - `GET|POST /api/v1/admin/profession-categories` + `/{id}` + `/all` + `/{id}/restore`
+  - `GET|POST /api/v1/admin/professions` + `/{id}` + `/all` + `/{id}/restore`
+  - `GET|POST /api/v1/admin/institutions` + `/{id}` + `/all` + `/{id}/restore` + `/{id}/detail`
+
+### Security Changes
+- Semua endpoint dilindungi `auth:sanctum` + `ensure.active` + `can:admin`
+- Semua Policy: `isSuperAdmin()` untuk semua aksi (viewAny, view, create, update, delete, restore)
+- Request authorize: `$user->isSuperAdmin()`
+
+### Architecture Notes
+- `ProfessionCategory` tidak memiliki `code` (berbeda dari Faculty/StudyProgram)
+- Unique check `Profession`: kombinasi `name + profession_category_id` (bukan hanya `name`)
+- `InstitutionController::updateDetail()` → 501 placeholder; `InstitutionDetail` model implementasi Phase berikutnya
+- Semua Service inject `AuditService` dan catat audit log untuk setiap operasi CRUD
+
+---
+
 ## [2026-06-06] Phase 2A · Session 2A-2 — Frontend Master Data + Store Fix
 
 ### Files Created
@@ -43,66 +118,13 @@
 - `09_CHANGELOG.md` — Entry ini
 
 ### Bug Fixes
-- **`FacultyFormModal.vue` baris 11**: `const store = useUserStore()` tanpa import → akan crash `ReferenceError`. Developer sudah mengkomentari baris tersebut. Store fix ini memastikan tidak ada referensi stale di tempat lain.
-- **Semua store**: mismatch key `pagination` vs `meta` yang dipakai di Pages → diseragamkan ke `meta`
-- **`useStudyProgramStore`**: Pages memanggil `store.studyPrograms` dan `store.fetchStudyPrograms()` tapi store meng-expose `programs` dan `fetchPrograms` → diseragamkan
+- **`FacultyFormModal.vue` baris 11**: `const store = useUserStore()` tanpa import → akan crash `ReferenceError`
+- **Semua store**: mismatch key `pagination` vs `meta` → diseragamkan ke `meta`
+- **`useStudyProgramStore`**: Pages memanggil `store.studyPrograms` dan `store.fetchStudyPrograms()` → diseragamkan
 
 ### Database Changes
 - Tidak ada perubahan schema di session ini
-- Factory baru: `FacultyFactory`, `StudyProgramFactory` (untuk testing)
-
-### UI Changes
-- Tiga halaman admin baru tersedia: Pengguna, Fakultas, Program Studi
-- Dua base component baru: `AppTable` (skeleton + empty state), `AppPagination`
-- Router Phase 2A terdaftar dan aktif
-
-### Security Changes
-- Tidak ada perubahan security di session ini
-
-### Refactoring Notes
-- Semua store kini menggunakan `meta` (bukan `pagination`) sebagai standard pagination state key
-- Naming convention tabel ditambahkan di `08_PHASE_TRACKER.md` sebagai acuan wajib untuk semua phase berikutnya
-
----
-
-## [2026-06-05] Phase 2A · Session 2A-1 — Backend Master Data
-
-### Files Created
-- `database/migrations/*_create_faculties_table.php`
-- `database/migrations/*_create_study_programs_table.php`
-- `app/Models/Faculty.php`
-- `app/Models/StudyProgram.php`
-- `app/Repositories/FacultyRepository.php`
-- `app/Repositories/StudyProgramRepository.php`
-- `app/Repositories/UserRepository.php` (update)
-- `app/Services/FacultyService.php`
-- `app/Services/StudyProgramService.php`
-- `app/Services/UserService.php`
-- `app/Http/Controllers/Api/Admin/FacultyController.php`
-- `app/Http/Controllers/Api/Admin/StudyProgramController.php`
-- `app/Http/Controllers/Api/Admin/UserController.php`
-- `app/Http/Requests/Admin/StoreFacultyRequest.php`
-- `app/Http/Requests/Admin/UpdateFacultyRequest.php`
-- `app/Http/Requests/Admin/StoreStudyProgramRequest.php`
-- `app/Http/Requests/Admin/UpdateStudyProgramRequest.php`
-- `app/Http/Requests/Admin/StoreUserRequest.php`
-- `app/Http/Requests/Admin/UpdateUserRequest.php`
-- `app/Http/Requests/Admin/ResetPasswordRequest.php`
-- `app/Http/Resources/FacultyResource.php`
-- `app/Http/Resources/StudyProgramResource.php`
-- `app/Http/Resources/UserResource.php`
-- `app/Policies/FacultyPolicy.php`
-- `app/Policies/StudyProgramPolicy.php`
-- `app/Policies/UserPolicy.php`
-- `database/seeders/FacultySeeder.php`
-- `database/seeders/StudyProgramSeeder.php`
-
-### Files Modified
-- `routes/api.php` — Tambah routes admin: faculties, study-programs, users
-
-### Database Changes
-- Tabel baru: `faculties` (uuid PK, name, code, is_active, soft delete)
-- Tabel baru: `study_programs` (uuid PK, faculty_id FK, name, code, degree, is_active, soft delete)
+- Factory baru: `FacultyFactory`, `StudyProgramFactory`
 
 ---
 
@@ -150,4 +172,4 @@
 
 ---
 
-*Terakhir diupdate: 06 Juni 2026*
+*Terakhir diupdate: 06 Juni 2026 — Phase 2B Backend SELESAI ✅*

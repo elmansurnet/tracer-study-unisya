@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProfessionCategoryController extends Controller
 {
-    public function __construct(protected ProfessionCategoryService $service) {}
+    public function __construct(protected ProfessionCategoryService $professionCategoryService) {}
 
     /**
      * GET /api/v1/admin/profession-categories
@@ -23,7 +23,7 @@ class ProfessionCategoryController extends Controller
     {
         $this->authorize('viewAny', ProfessionCategory::class);
 
-        $categories = $this->service->paginate(
+        $categories = $this->professionCategoryService->paginate(
             perPage: (int) $request->input('per_page', 15),
             filters: $request->only(['search', 'is_active']),
             sortBy:  $request->input('sort_by', 'name'),
@@ -35,13 +35,16 @@ class ProfessionCategoryController extends Controller
 
     /**
      * GET /api/v1/admin/profession-categories/all
+     * Dropdown — semua kategori profesi aktif tanpa paginasi.
      */
     public function all(): JsonResponse
     {
         $this->authorize('viewAny', ProfessionCategory::class);
 
         return response()->json([
-            'data' => ProfessionCategoryResource::collection($this->service->allActive()),
+            'data' => ProfessionCategoryResource::collection(
+                $this->professionCategoryService->allActive()
+            ),
         ]);
     }
 
@@ -52,7 +55,7 @@ class ProfessionCategoryController extends Controller
     {
         $this->authorize('create', ProfessionCategory::class);
 
-        $category = $this->service->create(
+        $category = $this->professionCategoryService->create(
             validated: $request->validated(),
             actor: $request->user()
         );
@@ -68,7 +71,7 @@ class ProfessionCategoryController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $category = $this->service->findOrFail($id);
+        $category = $this->professionCategoryService->findOrFail($id);
         $this->authorize('view', $category);
 
         return response()->json([
@@ -81,10 +84,10 @@ class ProfessionCategoryController extends Controller
      */
     public function update(UpdateProfessionCategoryRequest $request, string $id): JsonResponse
     {
-        $category = $this->service->findOrFail($id);
+        $category = $this->professionCategoryService->findOrFail($id);
         $this->authorize('update', $category);
 
-        $updated = $this->service->update(
+        $updated = $this->professionCategoryService->update(
             category:  $category,
             validated: $request->validated(),
             actor:     $request->user()
@@ -101,10 +104,10 @@ class ProfessionCategoryController extends Controller
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $category = $this->service->findOrFail($id);
+        $category = $this->professionCategoryService->findOrFail($id);
         $this->authorize('delete', $category);
 
-        $this->service->delete($category, $request->user());
+        $this->professionCategoryService->delete($category, $request->user());
 
         return response()->json([
             'message' => 'Kategori profesi berhasil dihapus.',
@@ -118,7 +121,7 @@ class ProfessionCategoryController extends Controller
     {
         $this->authorize('restore', ProfessionCategory::class);
 
-        $category = $this->service->restore($id, $request->user());
+        $category = $this->professionCategoryService->restore($id, $request->user());
 
         return response()->json([
             'message' => 'Kategori profesi berhasil dipulihkan.',

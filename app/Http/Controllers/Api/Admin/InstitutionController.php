@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class InstitutionController extends Controller
 {
-    public function __construct(protected InstitutionService $service) {}
+    public function __construct(protected InstitutionService $institutionService) {}
 
     /**
      * GET /api/v1/admin/institutions
@@ -23,7 +23,7 @@ class InstitutionController extends Controller
     {
         $this->authorize('viewAny', Institution::class);
 
-        $institutions = $this->service->paginate(
+        $institutions = $this->institutionService->paginate(
             perPage: (int) $request->input('per_page', 15),
             filters: $request->only(['search', 'is_active', 'type']),
             sortBy:  $request->input('sort_by', 'name'),
@@ -35,13 +35,16 @@ class InstitutionController extends Controller
 
     /**
      * GET /api/v1/admin/institutions/all
+     * Dropdown — semua institusi aktif tanpa paginasi.
      */
     public function all(): JsonResponse
     {
         $this->authorize('viewAny', Institution::class);
 
         return response()->json([
-            'data' => InstitutionResource::collection($this->service->allActive()),
+            'data' => InstitutionResource::collection(
+                $this->institutionService->allActive()
+            ),
         ]);
     }
 
@@ -52,7 +55,7 @@ class InstitutionController extends Controller
     {
         $this->authorize('create', Institution::class);
 
-        $institution = $this->service->create(
+        $institution = $this->institutionService->create(
             validated: $request->validated(),
             actor: $request->user()
         );
@@ -68,7 +71,7 @@ class InstitutionController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $institution = $this->service->findOrFail($id);
+        $institution = $this->institutionService->findOrFail($id);
         $this->authorize('view', $institution);
 
         return response()->json([
@@ -81,10 +84,10 @@ class InstitutionController extends Controller
      */
     public function update(UpdateInstitutionRequest $request, string $id): JsonResponse
     {
-        $institution = $this->service->findOrFail($id);
+        $institution = $this->institutionService->findOrFail($id);
         $this->authorize('update', $institution);
 
-        $updated = $this->service->update(
+        $updated = $this->institutionService->update(
             institution: $institution,
             validated:   $request->validated(),
             actor:       $request->user()
@@ -97,44 +100,14 @@ class InstitutionController extends Controller
     }
 
     /**
-     * GET /api/v1/admin/institutions/{id}/detail
-     */
-    public function showDetail(string $id): JsonResponse
-    {
-        $institution = $this->service->findOrFail($id);
-        $this->authorize('view', $institution);
-
-        return response()->json([
-            'data' => new InstitutionResource($institution),
-        ]);
-    }
-
-    /**
-     * PUT /api/v1/admin/institutions/{id}/detail
-     */
-    public function updateDetail(UpdateInstitutionRequest $request, string $id): JsonResponse
-    {
-        $institution = $this->service->findOrFail($id);
-        $this->authorize('update', $institution);
-
-        $detailData = $request->validated()['detail'] ?? [];
-        $updated = $this->service->updateDetail($institution, $detailData, $request->user());
-
-        return response()->json([
-            'message' => 'Detail institusi berhasil diperbarui.',
-            'data'    => new InstitutionResource($updated),
-        ]);
-    }
-
-    /**
      * DELETE /api/v1/admin/institutions/{id}
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $institution = $this->service->findOrFail($id);
+        $institution = $this->institutionService->findOrFail($id);
         $this->authorize('delete', $institution);
 
-        $this->service->delete($institution, $request->user());
+        $this->institutionService->delete($institution, $request->user());
 
         return response()->json([
             'message' => 'Institusi berhasil dihapus.',
@@ -148,11 +121,38 @@ class InstitutionController extends Controller
     {
         $this->authorize('restore', Institution::class);
 
-        $institution = $this->service->restore($id, $request->user());
+        $institution = $this->institutionService->restore($id, $request->user());
 
         return response()->json([
             'message' => 'Institusi berhasil dipulihkan.',
             'data'    => new InstitutionResource($institution),
         ]);
+    }
+
+    /**
+     * GET /api/v1/admin/institutions/{id}/detail
+     */
+    public function showDetail(string $id): JsonResponse
+    {
+        $institution = $this->institutionService->findOrFail($id);
+        $this->authorize('view', $institution);
+
+        return response()->json([
+            'data' => new InstitutionResource($institution->load('detail')),
+        ]);
+    }
+
+    /**
+     * PUT /api/v1/admin/institutions/{id}/detail
+     * Placeholder — implementasi InstitutionDetail di Phase berikutnya.
+     */
+    public function updateDetail(Request $request, string $id): JsonResponse
+    {
+        $institution = $this->institutionService->findOrFail($id);
+        $this->authorize('update', $institution);
+
+        return response()->json([
+            'message' => 'Fitur detail institusi akan tersedia di fase berikutnya.',
+        ], 501);
     }
 }

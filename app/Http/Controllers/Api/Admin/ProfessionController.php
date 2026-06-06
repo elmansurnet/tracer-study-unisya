@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProfessionController extends Controller
 {
-    public function __construct(protected ProfessionService $service) {}
+    public function __construct(protected ProfessionService $professionService) {}
 
     /**
      * GET /api/v1/admin/professions
@@ -23,7 +23,7 @@ class ProfessionController extends Controller
     {
         $this->authorize('viewAny', Profession::class);
 
-        $professions = $this->service->paginate(
+        $professions = $this->professionService->paginate(
             perPage: (int) $request->input('per_page', 15),
             filters: $request->only(['search', 'is_active', 'profession_category_id']),
             sortBy:  $request->input('sort_by', 'name'),
@@ -35,13 +35,18 @@ class ProfessionController extends Controller
 
     /**
      * GET /api/v1/admin/professions/all
+     * Dropdown — semua profesi aktif, opsional filter per kategori.
      */
-    public function all(): JsonResponse
+    public function all(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Profession::class);
 
         return response()->json([
-            'data' => ProfessionResource::collection($this->service->allActive()),
+            'data' => ProfessionResource::collection(
+                $this->professionService->allActive(
+                    categoryId: $request->input('profession_category_id')
+                )
+            ),
         ]);
     }
 
@@ -52,7 +57,7 @@ class ProfessionController extends Controller
     {
         $this->authorize('create', Profession::class);
 
-        $profession = $this->service->create(
+        $profession = $this->professionService->create(
             validated: $request->validated(),
             actor: $request->user()
         );
@@ -68,7 +73,7 @@ class ProfessionController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $profession = $this->service->findOrFail($id);
+        $profession = $this->professionService->findOrFail($id);
         $this->authorize('view', $profession);
 
         return response()->json([
@@ -81,10 +86,10 @@ class ProfessionController extends Controller
      */
     public function update(UpdateProfessionRequest $request, string $id): JsonResponse
     {
-        $profession = $this->service->findOrFail($id);
+        $profession = $this->professionService->findOrFail($id);
         $this->authorize('update', $profession);
 
-        $updated = $this->service->update(
+        $updated = $this->professionService->update(
             profession: $profession,
             validated:  $request->validated(),
             actor:      $request->user()
@@ -101,10 +106,10 @@ class ProfessionController extends Controller
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $profession = $this->service->findOrFail($id);
+        $profession = $this->professionService->findOrFail($id);
         $this->authorize('delete', $profession);
 
-        $this->service->delete($profession, $request->user());
+        $this->professionService->delete($profession, $request->user());
 
         return response()->json([
             'message' => 'Profesi berhasil dihapus.',
@@ -118,7 +123,7 @@ class ProfessionController extends Controller
     {
         $this->authorize('restore', Profession::class);
 
-        $profession = $this->service->restore($id, $request->user());
+        $profession = $this->professionService->restore($id, $request->user());
 
         return response()->json([
             'message' => 'Profesi berhasil dipulihkan.',

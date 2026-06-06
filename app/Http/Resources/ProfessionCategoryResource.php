@@ -14,7 +14,7 @@ class ProfessionCategoryResource extends JsonResource
             'name'             => $this->name,
             'description'      => $this->description,
             'is_active'        => $this->is_active,
-            'professions_count'=> $this->whenCounted('professions'),
+            'professions_count' => $this->whenCounted('professions'),
             'created_at'       => $this->created_at?->toIso8601String(),
             'updated_at'       => $this->updated_at?->toIso8601String(),
             'deleted_at'       => $this->deleted_at?->toIso8601String(),

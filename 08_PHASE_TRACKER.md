@@ -11,7 +11,7 @@
 |-------|------|--------|----------|
 | 1 | Auth & Core Infrastructure | ✅ SELESAI | 100% |
 | 2A | Master Data — User, Fakultas, Prodi | ✅ SELESAI | 100% |
-| 2B | Master Data — Profesi, Institusi | 🟡 AKTIF | 0% |
+| 2B | Master Data — Profesi, Institusi | ✅ SELESAI | 100% |
 | 2C | Master Data — Kuesioner | ⏳ Pending | 0% |
 | 3 | Alumni Module | ⏳ Pending | 0% |
 | 4 | Tracer Study Module | ⏳ Pending | 0% |
@@ -94,19 +94,14 @@
 - [x] Page: users/UsersPage.vue
 - [x] Page: users/UserFormModal.vue
 - [x] Page: faculties/FacultiesPage.vue
-- [x] Page: faculties/FacultyFormModal.vue (bug kritis dipatch: hapus referensi useUserStore)
+- [x] Page: faculties/FacultyFormModal.vue
 - [x] Page: study-programs/StudyProgramsPage.vue
 - [x] Page: study-programs/StudyProgramFormModal.vue
 - [x] Router: routes pengguna, fakultas, program-studi
 
-**Bugs Fixed:**
-- `FacultyFormModal.vue` baris 11: `useUserStore()` tidak di-import → dikomentari oleh developer
-- Semua store: state `pagination` → `meta` agar konsisten dengan template Pages
-- `useStudyProgramStore`: state `programs` → `studyPrograms`, semua action renamed sesuai Pages
-
 ---
 
-## PHASE 2B — Master Data: Profesi & Institusi 🟡 AKTIF
+## PHASE 2B — Master Data: Profesi & Institusi ✅ SELESAI
 
 ### Pre-condition Check
 - [x] Phase 2A 100% selesai
@@ -114,21 +109,23 @@
 - [x] Router Phase 2A terdaftar
 - [x] Naming convention table sudah didokumentasikan
 
-### Session 2B — Backend
+### Session 2B — Backend ✅
+**Tanggal selesai:** 06 Juni 2026
 
-- [ ] Migration: `profession_categories`, `professions`, `institutions`
-- [ ] Model: ProfessionCategory, Profession, Institution
-- [ ] Factory: ProfessionCategoryFactory, ProfessionFactory, InstitutionFactory
-- [ ] Seeder: ProfessionCategorySeeder, ProfessionSeeder, InstitutionSeeder
-- [ ] Repository: ProfessionCategoryRepository, ProfessionRepository, InstitutionRepository
-- [ ] Service: ProfessionCategoryService, ProfessionService, InstitutionService
-- [ ] Controller: ProfessionCategoryController, ProfessionController, InstitutionController
-- [ ] Request: Store/UpdateProfessionCategoryRequest, Store/UpdateProfessionRequest, Store/UpdateInstitutionRequest
-- [ ] Resource: ProfessionCategoryResource, ProfessionResource, InstitutionResource
-- [ ] Policy: ProfessionCategoryPolicy, ProfessionPolicy, InstitutionPolicy
-- [ ] Routes: api.php tambah routes 2B
+**Deliverables:**
+- [x] Migration: `profession_categories`, `professions`, `institutions` (sudah ada dari sesi sebelumnya)
+- [x] Model: ProfessionCategory, Profession, Institution (sudah ada dari sesi sebelumnya)
+- [x] Factory: ProfessionCategoryFactory, ProfessionFactory, InstitutionFactory
+- [x] Seeder: ProfessionCategorySeeder, ProfessionSeeder, InstitutionSeeder
+- [x] Repository: ProfessionCategoryRepository, ProfessionRepository, InstitutionRepository
+- [x] Service: ProfessionCategoryService, ProfessionService, InstitutionService
+- [x] Controller: ProfessionCategoryController, ProfessionController, InstitutionController
+- [x] Request: Store/UpdateProfessionCategoryRequest, Store/UpdateProfessionRequest, Store/UpdateInstitutionRequest
+- [x] Resource: ProfessionCategoryResource, ProfessionResource, InstitutionResource
+- [x] Policy: ProfessionCategoryPolicy, ProfessionPolicy, InstitutionPolicy
+- [x] Routes: api.php — routes 2B sudah terdaftar (pre-existing)
 
-### Session 2B — Frontend
+### Session 2B — Frontend ⏳ PENDING
 
 - [ ] Store: useProfessionCategoryStore
 - [ ] Store: useProfessionStore
@@ -147,12 +144,13 @@
 
 ### Risks Phase 2B
 - Tidak ada risk tinggi; semua tabel independen dari data Phase 2A
+- `InstitutionDetail` dan `updateDetail` endpoint → placeholder 501, implementasi Phase 2B Frontend atau Phase berikutnya
 
 ---
 
 ## PHASE 2C — Master Data: Kuesioner ⏳
 
-**Belum dimulai. Menunggu Phase 2B selesai.**
+**Belum dimulai. Menunggu Phase 2B Frontend selesai.**
 
 Scope:
 - Kategori Kuesioner
@@ -225,4 +223,4 @@ meta = {
 
 ---
 
-*Terakhir diupdate: 06 Juni 2026 — Phase 2A SELESAI ✅, Phase 2B AKTIF 🟡*
+*Terakhir diupdate: 06 Juni 2026 — Phase 2B Backend SELESAI ✅, Phase 2B Frontend PENDING ⏳*
