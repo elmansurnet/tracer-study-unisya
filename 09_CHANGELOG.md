@@ -1,177 +1,186 @@
-# Changelog — Tracer Study UNISYA
+# 09 — CHANGELOG
 
-> File ini mengikuti `08_PHASE_TRACKER.md` sebagai sumber kebenaran tunggal.
-> Setiap entri changelog harus selaras dengan task yang telah di-check `[x]` di Phase Tracker.
-
----
-
-## [Audit Phase 2A–2C] — 2026-06-06
-
-### Audit & Dokumentasi
-
-**Hasil Audit:**
-- Phase 2A: ✅ COMPLETE — semua task backend & frontend selesai. Pending: Seeder & Factory (carry-over ke 2C).
-- Phase 2B: ✅ COMPLETE — semua task backend & frontend selesai. Pending: InstitutionDetail + Tab UI + Seeder (carry-over ke 2C).
-- Phase 2C: ⬜ Belum Dimulai — menunggu carry-over dari 2A & 2B ditambahkan ke task list.
-
-**Files Modified:**
-- `08_PHASE_TRACKER.md` — Update status Phase 2A & 2B menjadi COMPLETE, centang semua task yang sudah selesai, tandai task pending dengan keterangan, tambah carry-over tasks ke Phase 2C, update konflik & keputusan teknis.
-- `09_CHANGELOG.md` — Sinkronisasi dengan Phase Tracker.
-
-**Konflik Terdeteksi & Dicatat:**
-- C-01: Seeder Fakultas & StudyProgram belum ada → carry-over ke Phase 2C
-- C-02: InstitutionDetailController belum ada → carry-over ke Phase 2C
-- C-03: Tab Detail Institusi (frontend) belum ada → carry-over ke Phase 2C
+> Riwayat perubahan project Tracer Study UNISYA.
+> Format: `[Tanggal] Phase Session — Deskripsi`
 
 ---
 
-## [Phase 2B Session B — Frontend] — 2026-06-06
+## [2026-06-06] Phase 2C — Audit, Notifikasi & Pengaturan — COMPLETE
 
-### Frontend
+### Files Created
 
-**Files Created:**
-- `resources/js/stores/useProfessionCategoryStore.js`
-- `resources/js/stores/useProfessionStore.js`
-- `resources/js/stores/useInstitutionStore.js`
-- `resources/js/pages/admin/profession-categories/ProfessionCategoriesPage.vue`
-- `resources/js/pages/admin/profession-categories/ProfessionCategoryFormModal.vue`
-- `resources/js/pages/admin/professions/ProfessionsPage.vue`
-- `resources/js/pages/admin/professions/ProfessionFormModal.vue`
-- `resources/js/pages/admin/institutions/InstitutionsPage.vue`
-- `resources/js/pages/admin/institutions/InstitutionFormModal.vue`
+**Backend:**
+- `app/Repositories/InstitutionDetailRepository.php`
+- `app/Services/InstitutionDetailService.php`
+- `app/Http/Controllers/Api/Admin/InstitutionDetailController.php`
+- `app/Http/Requests/Admin/StoreInstitutionDetailRequest.php`
+- `app/Http/Requests/Admin/UpdateInstitutionDetailRequest.php`
+- `app/Http/Resources/InstitutionDetailResource.php`
+- `app/Policies/InstitutionDetailPolicy.php`
+- `app/Http/Controllers/Api/Admin/AuditTrailController.php`
+- `app/Http/Controllers/Api/Admin/ActivityLogController.php`
+- `app/Http/Controllers/Api/Admin/SettingController.php`
+- `app/Observers/AuditTrailObserver.php`
+- `app/Policies/AuditTrailPolicy.php`
+- `app/Policies/AppSettingPolicy.php`
+- `database/seeders/AppSettingSeeder.php`
 
-**Files Modified:**
-- `resources/js/router/index.js` — Replace PlaceholderPage untuk 3 route Phase 2B:
-  - `admin.profession-categories` → `ProfessionCategoriesPage.vue`
-  - `admin.professions` → `ProfessionsPage.vue`
-  - `admin.institutions` → `InstitutionsPage.vue`
+**Frontend:**
+- `resources/js/stores/useAuditTrailStore.js`
+- `resources/js/stores/useActivityLogStore.js`
+- `resources/js/stores/useSettingStore.js`
+- `resources/js/stores/useInstitutionDetailStore.js`
+- `resources/js/pages/admin/audit-trail/AuditTrailPage.vue`
+- `resources/js/pages/admin/activity-log/ActivityLogPage.vue`
+- `resources/js/pages/admin/settings/SettingsPage.vue`
+- `resources/js/pages/admin/institutions/InstitutionDetailTab.vue`
 
-**UI/UX Notes:**
-- Semua halaman konsisten dengan pola Phase 2A (search + table + pagination + modal)
-- `ProfessionsPage` memiliki filter tambahan by kategori profesi (dropdown)
-- `InstitutionsPage` memiliki filter tambahan by tipe institusi (dropdown)
-- `ProfessionFormModal` load dropdown kategori via `fetchAllCategories()` on mount
-- `InstitutionFormModal` list tipe: perusahaan, instansi, pendidikan, wirausaha, ngo, lainnya
-- Route names Phase 2B menggunakan naming convention `admin.{resource}` (dot notation) konsisten dengan Phase 2A
+### Files Modified
+- `app/Providers/AppServiceProvider.php` — daftarkan `AuditTrailObserver` untuk 7 model
+- `app/Providers/AuthServiceProvider.php` — daftarkan seluruh policy Phase 2B & 2C
+- `database/seeders/DatabaseSeeder.php` — tambah `AppSettingSeeder`
+- `routes/api.php` — tambah routes: audit-trail, activity-log, settings, institution detail
+
+### Database Changes
+- Tidak ada migration baru (semua tabel sudah ada dari Phase sebelumnya)
+- Seeder: `AppSettingSeeder` — 16 setting default di 4 group
+
+### API Changes
+- `GET  /api/v1/admin/audit-trails` — list + filter (action, user_id, model, date range)
+- `GET  /api/v1/admin/audit-trails/{id}` — detail
+- `GET  /api/v1/admin/activity-logs` — list + filter (event, causer, log_name, date range)
+- `GET  /api/v1/admin/activity-logs/{id}` — detail
+- `DELETE /api/v1/admin/activity-logs` — purge (dengan filter `before` opsional)
+- `GET  /api/v1/admin/settings` — list semua setting (grouped)
+- `GET  /api/v1/admin/settings/{group}/{key}` — satu setting
+- `PUT  /api/v1/admin/settings/{group}/{key}` — update satu setting
+- `PUT  /api/v1/admin/settings/batch` — update banyak setting sekaligus
+- `GET  /api/v1/admin/institutions/{id}/detail` — pindah ke InstitutionDetailController
+- `PUT  /api/v1/admin/institutions/{id}/detail` — upsert detail institusi
+
+### Security Changes
+- `AuditTrailPolicy` — hanya `super_admin` yang bisa akses audit trail & purge activity log
+- `AppSettingPolicy` — hanya `super_admin` yang bisa lihat & ubah pengaturan
+- `InstitutionDetailPolicy` — `admin` dan `operator` bisa view & update
+- `AuditTrailObserver` — auto-exclude field sensitif (password, remember_token, api_token)
+- `SettingController` — nilai encrypted ditampilkan sebagai `[ENCRYPTED]`
+
+### Konflik Diselesaikan
+- C-04: SettingService sudah ada — digunakan langsung
+- C-05: AppSetting, AuditTrail, InstitutionDetail model sudah ada — Stack langsung dibuat
 
 ---
 
-## [Phase 2B Session A — Backend] — 2026-06-06
+## [2026-06-06] Phase 2B Session B — Master Data Profesi & Institusi — COMPLETE
 
-### Backend
+### Files Created
+- `app/Repositories/ProfessionCategoryRepository.php`
+- `app/Services/ProfessionCategoryService.php`
+- `app/Http/Controllers/Api/Admin/ProfessionCategoryController.php`
+- `app/Http/Requests/Admin/StoreProfessionCategoryRequest.php`
+- `app/Http/Requests/Admin/UpdateProfessionCategoryRequest.php`
+- `app/Http/Resources/ProfessionCategoryResource.php`
+- `app/Policies/ProfessionCategoryPolicy.php`
+- `app/Repositories/ProfessionRepository.php`
+- `app/Services/ProfessionService.php`
+- `app/Http/Controllers/Api/Admin/ProfessionController.php`
+- `app/Http/Requests/Admin/StoreProfessionRequest.php`
+- `app/Http/Requests/Admin/UpdateProfessionRequest.php`
+- `app/Http/Resources/ProfessionResource.php`
+- `app/Policies/ProfessionPolicy.php`
+- `app/Repositories/InstitutionRepository.php`
+- `app/Services/InstitutionService.php`
+- `app/Http/Controllers/Api/Admin/InstitutionController.php`
+- `app/Http/Requests/Admin/StoreInstitutionRequest.php`
+- `app/Http/Requests/Admin/UpdateInstitutionRequest.php`
+- `app/Http/Resources/InstitutionResource.php`
+- `app/Policies/InstitutionPolicy.php`
+- `database/seeders/ProfessionCategorySeeder.php`
+- `database/seeders/ProfessionSeeder.php`
+- `database/seeders/InstitutionSeeder.php`
 
-**Files Created:**
-- `database/migrations/2026_06_04_000007_create_profession_categories_table.php`
-- `database/migrations/2026_06_04_000008_create_professions_table.php`
-- `database/migrations/2026_06_04_000009_create_institutions_table.php`
+### Files Modified
+- `routes/api.php` — tambah routes 2B
+- `database/seeders/DatabaseSeeder.php` — tambah seeder 2B
+
+---
+
+## [2026-06-06] Phase 2B Session A — Migration + Model Profesi & Institusi — COMPLETE
+
+### Files Created
+- `database/migrations/2026_06_04_000006_create_profession_categories_table.php`
+- `database/migrations/2026_06_04_000007_create_professions_table.php`
+- `database/migrations/2026_06_04_000008_create_institutions_table.php`
+- `database/migrations/2026_06_04_000009_create_institution_details_table.php`
 - `app/Models/ProfessionCategory.php`
 - `app/Models/Profession.php`
 - `app/Models/Institution.php`
-- `app/Repositories/ProfessionCategoryRepository.php`
-- `app/Repositories/ProfessionRepository.php`
-- `app/Repositories/InstitutionRepository.php`
-- `app/Services/ProfessionCategoryService.php`
-- `app/Services/ProfessionService.php`
-- `app/Services/InstitutionService.php`
-- `app/Http/Controllers/Admin/ProfessionCategoryController.php`
-- `app/Http/Controllers/Admin/ProfessionController.php`
-- `app/Http/Controllers/Admin/InstitutionController.php`
-- `app/Http/Requests/Admin/StoreProfessionCategoryRequest.php`
-- `app/Http/Requests/Admin/UpdateProfessionCategoryRequest.php`
-- `app/Http/Requests/Admin/StoreProfessionRequest.php`
-- `app/Http/Requests/Admin/UpdateProfessionRequest.php`
-- `app/Http/Requests/Admin/StoreInstitutionRequest.php`
-- `app/Http/Requests/Admin/UpdateInstitutionRequest.php`
-- `app/Http/Resources/Admin/ProfessionCategoryResource.php`
-- `app/Http/Resources/Admin/ProfessionResource.php`
-- `app/Http/Resources/Admin/InstitutionResource.php`
-- `app/Policies/ProfessionCategoryPolicy.php`
-- `app/Policies/ProfessionPolicy.php`
-- `app/Policies/InstitutionPolicy.php`
+- `app/Models/InstitutionDetail.php`
 
 ---
 
-## [Phase 2A Session C — Frontend] — 2026-06-04
+## [2026-06-04] Phase 2A Session C — Controller + Request + Resource + Policy — COMPLETE
 
-### Frontend
-
-**Files Created:**
-- `resources/js/stores/useFacultyStore.js`
-- `resources/js/stores/useStudyProgramStore.js`
-- `resources/js/stores/useUserStore.js`
-- `resources/js/pages/admin/faculties/FacultiesPage.vue`
-- `resources/js/pages/admin/faculties/FacultyFormModal.vue`
-- `resources/js/pages/admin/study-programs/StudyProgramsPage.vue`
-- `resources/js/pages/admin/study-programs/StudyProgramFormModal.vue`
-- `resources/js/pages/admin/users/UsersPage.vue`
-- `resources/js/pages/admin/users/UserFormModal.vue`
-
-**Files Modified:**
-- `resources/js/router/index.js` — Register routes Phase 2A:
-  - `admin.users` → `UsersPage.vue`
-  - `admin.faculties` → `FacultiesPage.vue`
-  - `admin.study-programs` → `StudyProgramsPage.vue`
-
----
-
-## [Phase 2A Session B — Backend] — 2026-06-04
-
-### Backend
-
-**Files Created:**
-- `app/Repositories/UserRepository.php`
-- `app/Services/UserService.php`
-- `app/Http/Controllers/Admin/UserController.php`
-- `app/Http/Requests/Admin/StoreUserRequest.php`
-- `app/Http/Requests/Admin/UpdateUserRequest.php`
-- `app/Http/Requests/Admin/ResetPasswordRequest.php`
-- `app/Http/Resources/Admin/UserResource.php`
-- `app/Policies/UserPolicy.php`
-- `app/Repositories/FakultasRepository.php`
-- `app/Services/FakultasService.php`
-- `app/Http/Controllers/Admin/FakultasController.php`
-- `app/Http/Requests/Admin/StoreFakultasRequest.php`
-- `app/Http/Requests/Admin/UpdateFakultasRequest.php`
-- `app/Http/Resources/Admin/FakultasResource.php`
-- `app/Policies/FakultasPolicy.php`
-- `app/Repositories/StudyProgramRepository.php`
-- `app/Services/StudyProgramService.php`
-- `app/Http/Controllers/Admin/StudyProgramController.php`
+### Files Created
+- `app/Http/Controllers/Api/Admin/FacultyController.php`
+- `app/Http/Requests/Admin/StoreFacultyRequest.php`
+- `app/Http/Requests/Admin/UpdateFacultyRequest.php`
+- `app/Http/Resources/FacultyResource.php`
+- `app/Policies/FacultyPolicy.php`
+- `app/Http/Controllers/Api/Admin/StudyProgramController.php`
 - `app/Http/Requests/Admin/StoreStudyProgramRequest.php`
 - `app/Http/Requests/Admin/UpdateStudyProgramRequest.php`
-- `app/Http/Resources/Admin/StudyProgramResource.php`
+- `app/Http/Resources/StudyProgramResource.php`
 - `app/Policies/StudyProgramPolicy.php`
-- `routes/admin.php`
+- `app/Http/Controllers/Api/Admin/UserController.php`
+- `app/Http/Requests/Admin/StoreUserRequest.php`
+- `app/Http/Requests/Admin/UpdateUserRequest.php`
+- `app/Http/Resources/UserResource.php`
+- `app/Policies/UserPolicy.php`
+
+### Files Modified
+- `routes/api.php` — tambah routes faculty, study-program, user
+- `app/Providers/AuthServiceProvider.php` — daftarkan FacultyPolicy, StudyProgramPolicy, UserPolicy
 
 ---
 
-## [Phase 2A Session A — Migration + Model] — 2026-06-04
+## [2026-06-04] Phase 2A Session B — Repository + Service — COMPLETE
 
-### Database
+### Files Created
+- `app/Repositories/FacultyRepository.php`
+- `app/Services/FacultyService.php`
+- `app/Repositories/StudyProgramRepository.php`
+- `app/Services/StudyProgramService.php`
+- `app/Repositories/Contracts/UserRepositoryInterface.php`
+- `app/Repositories/Eloquent/UserRepository.php`
+- `app/Services/UserService.php`
+- `app/Services/AuditService.php`
+- `app/Models/AppSetting.php`
+- `app/Models/AuditTrail.php`
+- `app/Services/SettingService.php`
 
-**Files Created:**
+---
+
+## [2026-06-04] Phase 2A Session A — Migration + Model Fakultas & Prodi — COMPLETE
+
+### Files Created
 - `database/migrations/2026_06_04_000004_create_faculties_table.php`
 - `database/migrations/2026_06_04_000005_create_study_programs_table.php`
-- `app/Models/Fakultas.php`
+- `app/Models/Faculty.php`
 - `app/Models/StudyProgram.php`
+- `database/seeders/FacultySeeder.php`
+- `database/seeders/StudyProgramSeeder.php`
 
 ---
 
-## [Phase 1 — Setup & Infrastruktur] — 2026-06-01
+## [2026-06-01] Phase 1 — Foundation & Auth — COMPLETE
 
-### Initial Setup
-
-**Backend:**
-- Laravel 12 + PHP 8.3 installed
-- Packages: spatie/laravel-permission, spatie/laravel-activitylog, laravel/sanctum
-- Base Service, Repository, Resource abstract classes
-- Exception Handler JSON response
-- Sanctum SPA authentication + OTP flow
-- Role-based middleware
-
-**Frontend:**
-- Vue 3 + Vite + Pinia + Vue Router configured
-- Base layouts: AdminLayout, AlumniLayout, EmployerLayout
-- Base components: AppButton, AppInput, AppModal, AppTable, AppPagination, AppBadge, AppConfirm
-- HTTP client (axios), auth store, ui store
-- Login page, OTP page, Dashboard pages (Admin + Alumni + Employer)
+### Files Created
+- Auth: `LoginController`, `OtpController`, `EmployerAccessController`
+- Middleware: `EnsureUserIsActive`, `EnsureEmployerToken`
+- Models: `User`, `OtpCode`, `EmployerAccessToken`
+- Migrations: users, otp_codes, employer_access_tokens, alumni (skeleton), alumni_employment_histories (skeleton)
+- `database/seeders/RoleSeeder.php`
+- `app/Services/OtpService.php`
+- `app/Providers/AppServiceProvider.php` (rate limiting)
+- `app/Providers/AuthServiceProvider.php` (Gate admin, Gate alumni)
