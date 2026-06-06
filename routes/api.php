@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\ActivityLogController;
+use App\Http\Controllers\Api\Admin\AlumniController;
+use App\Http\Controllers\Api\Admin\AlumniEmploymentHistoryController;
 use App\Http\Controllers\Api\Admin\AuditTrailController;
 use App\Http\Controllers\Api\Admin\FacultyController;
 use App\Http\Controllers\Api\Admin\InstitutionController;
@@ -10,6 +12,8 @@ use App\Http\Controllers\Api\Admin\ProfessionController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\StudyProgramController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\AlumniSelf\EmploymentHistoryController;
+use App\Http\Controllers\Api\AlumniSelf\ProfileController;
 use App\Http\Controllers\Api\Auth\EmployerAccessController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\OtpController;
@@ -70,6 +74,9 @@ Route::prefix('v1')->group(function () {
             Route::delete('/study-programs/{id}',          [StudyProgramController::class, 'destroy']);
             Route::patch('/study-programs/{id}/restore',   [StudyProgramController::class, 'restore']);
 
+            // Alumni per Program Studi (nested read)
+            Route::get('/study-programs/{studyProgramId}/alumni', [AlumniController::class, 'byStudyProgram']);
+
             // Manajemen Kategori Profesi
             Route::get('/profession-categories/all',            [ProfessionCategoryController::class, 'all']);
             Route::get('/profession-categories',                [ProfessionCategoryController::class, 'index']);
@@ -89,15 +96,33 @@ Route::prefix('v1')->group(function () {
             Route::patch('/professions/{id}/restore', [ProfessionController::class, 'restore']);
 
             // Manajemen Institusi + Detail
-            Route::get('/institutions/all',                       [InstitutionController::class, 'all']);
-            Route::get('/institutions',                           [InstitutionController::class, 'index']);
-            Route::post('/institutions',                          [InstitutionController::class, 'store']);
-            Route::get('/institutions/{id}',                      [InstitutionController::class, 'show']);
-            Route::put('/institutions/{id}',                      [InstitutionController::class, 'update']);
-            Route::delete('/institutions/{id}',                   [InstitutionController::class, 'destroy']);
-            Route::patch('/institutions/{id}/restore',            [InstitutionController::class, 'restore']);
-            Route::get('/institutions/{id}/detail',               [InstitutionDetailController::class, 'show']);
-            Route::put('/institutions/{id}/detail',               [InstitutionDetailController::class, 'upsert']);
+            Route::get('/institutions/all',                    [InstitutionController::class, 'all']);
+            Route::get('/institutions',                        [InstitutionController::class, 'index']);
+            Route::post('/institutions',                       [InstitutionController::class, 'store']);
+            Route::get('/institutions/{id}',                   [InstitutionController::class, 'show']);
+            Route::put('/institutions/{id}',                   [InstitutionController::class, 'update']);
+            Route::delete('/institutions/{id}',                [InstitutionController::class, 'destroy']);
+            Route::patch('/institutions/{id}/restore',         [InstitutionController::class, 'restore']);
+            Route::get('/institutions/{id}/detail',            [InstitutionDetailController::class, 'show']);
+            Route::put('/institutions/{id}/detail',            [InstitutionDetailController::class, 'upsert']);
+
+            // Manajemen Alumni
+            Route::get('/alumni/graduation-years',             [AlumniController::class, 'graduationYears']);
+            Route::get('/alumni/employment-stats',             [AlumniController::class, 'employmentStats']);
+            Route::get('/alumni',                              [AlumniController::class, 'index']);
+            Route::post('/alumni',                             [AlumniController::class, 'store']);
+            Route::get('/alumni/{id}',                         [AlumniController::class, 'show']);
+            Route::put('/alumni/{id}',                         [AlumniController::class, 'update']);
+            Route::delete('/alumni/{id}',                      [AlumniController::class, 'destroy']);
+            Route::patch('/alumni/{id}/restore',               [AlumniController::class, 'restore']);
+
+            // Riwayat Pekerjaan Alumni (nested admin)
+            Route::get('/alumni/{alumniId}/employment-histories',                      [AlumniEmploymentHistoryController::class, 'index']);
+            Route::post('/alumni/{alumniId}/employment-histories',                     [AlumniEmploymentHistoryController::class, 'store']);
+            Route::get('/alumni/{alumniId}/employment-histories/{id}',                 [AlumniEmploymentHistoryController::class, 'show']);
+            Route::put('/alumni/{alumniId}/employment-histories/{id}',                 [AlumniEmploymentHistoryController::class, 'update']);
+            Route::delete('/alumni/{alumniId}/employment-histories/{id}',              [AlumniEmploymentHistoryController::class, 'destroy']);
+            Route::patch('/alumni/{alumniId}/employment-histories/{id}/restore',       [AlumniEmploymentHistoryController::class, 'restore']);
 
             // Audit Trail & Activity Log
             Route::get('/audit-trails',              [AuditTrailController::class, 'index']);
@@ -113,9 +138,21 @@ Route::prefix('v1')->group(function () {
             Route::put('/settings/batch',            [SettingController::class, 'batchUpdate']);
         });
 
-        // ─── Alumni Routes ─────────────────────────────────────────
+        // ─── Alumni Self-Service Routes ────────────────────────────
         Route::middleware('can:alumni')->prefix('alumni')->group(function () {
-            //
+
+            // Profil & Status Pekerjaan
+            Route::get('/profile',                           [ProfileController::class, 'show']);
+            Route::patch('/profile',                         [ProfileController::class, 'update']);
+            Route::patch('/employment-status',               [ProfileController::class, 'updateEmploymentStatus']);
+
+            // Riwayat Pekerjaan (self-managed)
+            Route::get('/employment-histories',              [EmploymentHistoryController::class, 'index']);
+            Route::post('/employment-histories',             [EmploymentHistoryController::class, 'store']);
+            Route::get('/employment-histories/{id}',         [EmploymentHistoryController::class, 'show']);
+            Route::put('/employment-histories/{id}',         [EmploymentHistoryController::class, 'update']);
+            Route::delete('/employment-histories/{id}',      [EmploymentHistoryController::class, 'destroy']);
+            Route::patch('/employment-histories/{id}/restore', [EmploymentHistoryController::class, 'restore']);
         });
 
         // ─── Employer Routes ───────────────────────────────────────
