@@ -11,17 +11,25 @@ use App\Models\Institution;
 use App\Models\InstitutionDetail;
 use App\Models\Profession;
 use App\Models\ProfessionCategory;
+use App\Models\Questionnaire;
+use App\Models\QuestionnaireCategory;
+use App\Models\QuestionnaireQuestion;
+use App\Models\AnswerType;
 use App\Models\StudyProgram;
 use App\Models\User;
 use App\Policies\AlumniEmploymentHistoryPolicy;
 use App\Policies\AlumniPolicy;
 use App\Policies\AppSettingPolicy;
 use App\Policies\AuditTrailPolicy;
+use App\Policies\AnswerTypePolicy;
 use App\Policies\FacultyPolicy;
 use App\Policies\InstitutionDetailPolicy;
 use App\Policies\InstitutionPolicy;
 use App\Policies\ProfessionCategoryPolicy;
 use App\Policies\ProfessionPolicy;
+use App\Policies\QuestionnaireCategoryPolicy;
+use App\Policies\QuestionnairePolicy;
+use App\Policies\QuestionnaireQuestionPolicy;
 use App\Policies\StudyProgramPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -46,6 +54,11 @@ class AuthServiceProvider extends ServiceProvider
         AppSetting::class              => AppSettingPolicy::class,
         Alumni::class                  => AlumniPolicy::class,
         AlumniEmploymentHistory::class => AlumniEmploymentHistoryPolicy::class,
+        // Phase 4A
+        QuestionnaireCategory::class   => QuestionnaireCategoryPolicy::class,
+        AnswerType::class              => AnswerTypePolicy::class,
+        Questionnaire::class           => QuestionnairePolicy::class,
+        QuestionnaireQuestion::class   => QuestionnaireQuestionPolicy::class,
     ];
 
     public function boot(): void
