@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-06-06] Phase 3A — RESMI DITUTUP — CRUD Alumni Dasar (Backend Full-Stack) — CLOSED
+
+### Ringkasan Penutupan Resmi
+
+Session 3A ditutup secara resmi pada 2026-06-06 setelah seluruh **backend task** diselesaikan dalam 4 batch commit. Semua 24 API route baru aktif, 2 Policy terdaftar di `AuthServiceProvider`, dan business rules kritis (one-current-job, auto-sync `is_employed`, double-guard ownership, guard delete tracer study) telah terverifikasi.
+
+Frontend tasks (7 item) **di-carry-over ke Session 3B** karena backend selesai lebih cepat dari estimasi dan tidak menghalangi penutupan 3A. Carry-over ini tercatat sebagai keputusan teknis resmi (`3A→3B`) di `08_PHASE_TRACKER.md`.
+
+**Verifikasi Penutupan:**
+- [x] Semua backend task 3A berstatus `[x]` di Phase Tracker
+- [x] 4 Batch commit berhasil push ke `main`
+- [x] Konflik C-06 (namespace AlumniSelf) diselesaikan dan dicatat
+- [x] 24 route API baru terdaftar (15 Admin + 9 AlumniSelf)
+- [x] `AuthServiceProvider` diupdate dengan 2 policy baru
+- [x] Session 3B status diubah menjadi `🔄 AKTIF`
+- [x] Frontend carry-over 7 item dari 3A ke 3B dicatat di Phase Tracker
+
+---
+
 ## [2026-06-06] Phase 3A — CRUD Alumni Dasar (Backend Full-Stack) — COMPLETE
 
 ### Overview
@@ -119,6 +138,9 @@ Session 3A diselesaikan dalam 4 batch push pada 2026-06-06. Seluruh backend stac
 - Double-guard di AlumniSelf controllers: `abort_unless` ownership check SEBELUM Policy (fail-fast, cegah info disclosure)
 - `StoreAlumniRequest` / `UpdateAlumniRequest` — otorisasi `isSuperAdmin()` saja, tidak cukup login biasa
 - `UpdateProfileRequest` — alumni hanya bisa ubah field kontak, tidak bisa ubah NIM/graduation_year/study_program_id
+
+### Refactoring Notes
+- Frontend tasks 3A (7 item) di-carry-over ke Session 3B: backend selesai lebih cepat dari estimasi, tidak ada dependency yang menghalangi penutupan 3A
 
 ### Konflik Diselesaikan
 - C-06: AlumniSelf controller namespace conflict — gunakan `App\Http\Controllers\Api\AlumniSelf\` terpisah
