@@ -120,44 +120,47 @@ const routes = [
       },
 
       // =========================================================
-      // Phase 3 — Alumni (Placeholder)
+      // Phase 3 — Alumni (REAL COMPONENTS — Phase 3C Batch 3)
       // =========================================================
       {
         path: 'alumni',
         name: 'admin-alumni',
-        component: PlaceholderPage,
-        props: {
-          title: 'Manajemen Alumni',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Alumni' },
-          ],
-        },
+        component: () => import('@/pages/admin/alumni/AdminAlumniListPage.vue'),
+        meta: { title: 'Manajemen Alumni' },
       },
       {
         path: 'alumni/:id',
         name: 'admin-alumni-detail',
-        component: PlaceholderPage,
-        props: (route) => ({
-          title: `Detail Alumni #${route.params.id}`,
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Alumni', to: '/admin/alumni' },
-            { label: `Detail #${route.params.id}` },
-          ],
-        }),
+        component: () => import('@/pages/admin/alumni/AdminAlumniDetailPage.vue'),
+        meta: { title: 'Detail Alumni' },
       },
       {
         path: 'permohonan-alumni',
         name: 'admin-alumni-requests',
-        component: PlaceholderPage,
-        props: {
-          title: 'Permohonan Alumni',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Permohonan Alumni' },
-          ],
-        },
+        component: () => import('@/pages/admin/alumni/AlumniRequestAdminPage.vue'),
+        meta: { title: 'Permohonan Alumni' },
+      },
+
+      // =========================================================
+      // Phase 2C — Audit, Activity Log, Settings
+      // =========================================================
+      {
+        path: 'audit-trail',
+        name: 'admin-audit-trail',
+        component: () => import('@/pages/admin/audit-trail/AuditTrailPage.vue'),
+        meta: { title: 'Audit Trail' },
+      },
+      {
+        path: 'activity-log',
+        name: 'admin-activity-log',
+        component: () => import('@/pages/admin/activity-log/ActivityLogPage.vue'),
+        meta: { title: 'Activity Log' },
+      },
+      {
+        path: 'pengaturan',
+        name: 'admin-settings',
+        component: () => import('@/pages/admin/settings/SettingsPage.vue'),
+        meta: { title: 'Pengaturan Sistem' },
       },
 
       // =========================================================
@@ -249,42 +252,6 @@ const routes = [
           ],
         },
       },
-      {
-        path: 'pengaturan',
-        name: 'admin-settings',
-        component: PlaceholderPage,
-        props: {
-          title: 'Pengaturan Sistem',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Pengaturan' },
-          ],
-        },
-      },
-      {
-        path: 'audit-trail',
-        name: 'admin-audit-trail',
-        component: PlaceholderPage,
-        props: {
-          title: 'Audit Trail',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Audit Trail' },
-          ],
-        },
-      },
-      {
-        path: 'activity-log',
-        name: 'admin-activity-log',
-        component: PlaceholderPage,
-        props: {
-          title: 'Activity Log',
-          breadcrumbs: [
-            { label: 'Admin', to: '/admin/dashboard' },
-            { label: 'Activity Log' },
-          ],
-        },
-      },
     ],
   },
   {
@@ -297,41 +264,26 @@ const routes = [
         name: 'alumni-dashboard',
         component: () => import('@/pages/alumni/DashboardPage.vue'),
       },
+      // =========================================================
+      // Phase 3 — Alumni Self-Service (REAL COMPONENTS — Phase 3C Batch 3)
+      // =========================================================
       {
         path: 'profil',
         name: 'alumni-profile',
-        component: PlaceholderPage,
-        props: {
-          title: 'Profil Alumni',
-          breadcrumbs: [
-            { label: 'Alumni', to: '/alumni/dashboard' },
-            { label: 'Profil' },
-          ],
-        },
+        component: () => import('@/pages/alumni/AlumniProfilePage.vue'),
+        meta: { title: 'Profil Saya' },
       },
       {
         path: 'pekerjaan',
         name: 'alumni-employment',
-        component: PlaceholderPage,
-        props: {
-          title: 'Riwayat Pekerjaan',
-          breadcrumbs: [
-            { label: 'Alumni', to: '/alumni/dashboard' },
-            { label: 'Pekerjaan' },
-          ],
-        },
+        component: () => import('@/pages/alumni/AlumniEmploymentPage.vue'),
+        meta: { title: 'Riwayat Pekerjaan' },
       },
       {
         path: 'permohonan',
         name: 'alumni-requests',
-        component: PlaceholderPage,
-        props: {
-          title: 'Permohonan Alumni',
-          breadcrumbs: [
-            { label: 'Alumni', to: '/alumni/dashboard' },
-            { label: 'Permohonan' },
-          ],
-        },
+        component: () => import('@/pages/alumni/AlumniRequestPage.vue'),
+        meta: { title: 'Permohonan' },
       },
       {
         path: 'employer',
