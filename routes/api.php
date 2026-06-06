@@ -4,12 +4,16 @@ use App\Http\Controllers\Api\Admin\ActivityLogController;
 use App\Http\Controllers\Api\Admin\AlumniController;
 use App\Http\Controllers\Api\Admin\AlumniEmploymentHistoryController;
 use App\Http\Controllers\Api\Admin\AlumniRequestController;
+use App\Http\Controllers\Api\Admin\AnswerTypeController;
 use App\Http\Controllers\Api\Admin\AuditTrailController;
 use App\Http\Controllers\Api\Admin\FacultyController;
 use App\Http\Controllers\Api\Admin\InstitutionController;
 use App\Http\Controllers\Api\Admin\InstitutionDetailController;
 use App\Http\Controllers\Api\Admin\ProfessionCategoryController;
 use App\Http\Controllers\Api\Admin\ProfessionController;
+use App\Http\Controllers\Api\Admin\QuestionnaireCategoryController;
+use App\Http\Controllers\Api\Admin\QuestionnaireController;
+use App\Http\Controllers\Api\Admin\QuestionnaireQuestionController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\StudyProgramController;
 use App\Http\Controllers\Api\Admin\UserController;
@@ -23,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    // ─── Auth (Public) ──────────────────────────────────────────────────────────────────
+    // ─── Auth (Public) ──────────────────────────────────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login'])
             ->middleware('throttle:auth-login');
@@ -33,7 +37,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:otp-verify');
     });
 
-    // ─── Employer (Public) ───────────────────────────────────────────────────────────────
+    // ─── Employer (Public) ───────────────────────────────────────────────────────────────────────
     Route::prefix('employer')->group(function () {
         Route::post('/otp/request', [EmployerAccessController::class, 'requestOtp'])
             ->middleware('throttle:otp-request');
@@ -41,12 +45,12 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:otp-verify');
     });
 
-    // ─── Authenticated Routes ──────────────────────────────────────────────────────────
+    // ─── Authenticated Routes ──────────────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'ensure.active'])->group(function () {
         Route::post('/auth/logout', [LoginController::class, 'logout']);
         Route::get('/auth/me',     [LoginController::class, 'me']);
 
-        // ─── Admin Routes ───────────────────────────────────────────────────────────
+        // ─── Admin Routes ─────────────────────────────────────────────────────────────────
         Route::middleware('can:admin')->prefix('admin')->group(function () {
 
             // Manajemen Pengguna
@@ -119,39 +123,76 @@ Route::prefix('v1')->group(function () {
             Route::patch('/alumni/{id}/restore',               [AlumniController::class, 'restore']);
 
             // Riwayat Pekerjaan Alumni (nested admin)
-            Route::get('/alumni/{alumniId}/employment-histories',                      [AlumniEmploymentHistoryController::class, 'index']);
-            Route::post('/alumni/{alumniId}/employment-histories',                     [AlumniEmploymentHistoryController::class, 'store']);
-            Route::get('/alumni/{alumniId}/employment-histories/{id}',                 [AlumniEmploymentHistoryController::class, 'show']);
-            Route::put('/alumni/{alumniId}/employment-histories/{id}',                 [AlumniEmploymentHistoryController::class, 'update']);
-            Route::delete('/alumni/{alumniId}/employment-histories/{id}',              [AlumniEmploymentHistoryController::class, 'destroy']);
-            Route::patch('/alumni/{alumniId}/employment-histories/{id}/restore',       [AlumniEmploymentHistoryController::class, 'restore']);
+            Route::get('/alumni/{alumniId}/employment-histories',                    [AlumniEmploymentHistoryController::class, 'index']);
+            Route::post('/alumni/{alumniId}/employment-histories',                   [AlumniEmploymentHistoryController::class, 'store']);
+            Route::get('/alumni/{alumniId}/employment-histories/{id}',               [AlumniEmploymentHistoryController::class, 'show']);
+            Route::put('/alumni/{alumniId}/employment-histories/{id}',               [AlumniEmploymentHistoryController::class, 'update']);
+            Route::delete('/alumni/{alumniId}/employment-histories/{id}',            [AlumniEmploymentHistoryController::class, 'destroy']);
+            Route::patch('/alumni/{alumniId}/employment-histories/{id}/restore',     [AlumniEmploymentHistoryController::class, 'restore']);
 
             // Permohonan Alumni (Admin)
-            Route::get('/alumni-requests/count-pending',       [AlumniRequestController::class, 'countPending']);
-            Route::get('/alumni-requests',                     [AlumniRequestController::class, 'index']);
-            Route::post('/alumni-requests',                    [AlumniRequestController::class, 'store']);
-            Route::get('/alumni-requests/{id}',                [AlumniRequestController::class, 'show']);
-            Route::put('/alumni-requests/{id}',                [AlumniRequestController::class, 'update']);
-            Route::delete('/alumni-requests/{id}',             [AlumniRequestController::class, 'destroy']);
-            Route::patch('/alumni-requests/{id}/restore',      [AlumniRequestController::class, 'restore']);
-            Route::post('/alumni-requests/{id}/approve',       [AlumniRequestController::class, 'approve']);
-            Route::post('/alumni-requests/{id}/reject',        [AlumniRequestController::class, 'reject']);
+            Route::get('/alumni-requests/count-pending',   [AlumniRequestController::class, 'countPending']);
+            Route::get('/alumni-requests',                 [AlumniRequestController::class, 'index']);
+            Route::post('/alumni-requests',                [AlumniRequestController::class, 'store']);
+            Route::get('/alumni-requests/{id}',            [AlumniRequestController::class, 'show']);
+            Route::put('/alumni-requests/{id}',            [AlumniRequestController::class, 'update']);
+            Route::delete('/alumni-requests/{id}',         [AlumniRequestController::class, 'destroy']);
+            Route::patch('/alumni-requests/{id}/restore',  [AlumniRequestController::class, 'restore']);
+            Route::post('/alumni-requests/{id}/approve',   [AlumniRequestController::class, 'approve']);
+            Route::post('/alumni-requests/{id}/reject',    [AlumniRequestController::class, 'reject']);
 
             // Audit Trail & Activity Log
-            Route::get('/audit-trails',              [AuditTrailController::class, 'index']);
-            Route::get('/audit-trails/{id}',         [AuditTrailController::class, 'show']);
-            Route::get('/activity-logs',             [ActivityLogController::class, 'index']);
-            Route::get('/activity-logs/{id}',        [ActivityLogController::class, 'show']);
-            Route::delete('/activity-logs',          [ActivityLogController::class, 'purge']);
+            Route::get('/audit-trails',            [AuditTrailController::class, 'index']);
+            Route::get('/audit-trails/{id}',       [AuditTrailController::class, 'show']);
+            Route::get('/activity-logs',           [ActivityLogController::class, 'index']);
+            Route::get('/activity-logs/{id}',      [ActivityLogController::class, 'show']);
+            Route::delete('/activity-logs',        [ActivityLogController::class, 'purge']);
 
             // Pengaturan Aplikasi
-            Route::get('/settings',                  [SettingController::class, 'index']);
-            Route::get('/settings/{group}/{key}',    [SettingController::class, 'show']);
-            Route::put('/settings/{group}/{key}',    [SettingController::class, 'update']);
-            Route::put('/settings/batch',            [SettingController::class, 'batchUpdate']);
+            Route::get('/settings',                [SettingController::class, 'index']);
+            Route::get('/settings/{group}/{key}',  [SettingController::class, 'show']);
+            Route::put('/settings/{group}/{key}',  [SettingController::class, 'update']);
+            Route::put('/settings/batch',          [SettingController::class, 'batchUpdate']);
+
+            // ─── Phase 4A: Builder Kuesioner ────────────────────────────────────
+
+            // Kategori Kuesioner
+            Route::get('/questionnaire-categories/all',            [QuestionnaireCategoryController::class, 'all']);
+            Route::get('/questionnaire-categories',                [QuestionnaireCategoryController::class, 'index']);
+            Route::post('/questionnaire-categories',               [QuestionnaireCategoryController::class, 'store']);
+            Route::get('/questionnaire-categories/{id}',           [QuestionnaireCategoryController::class, 'show']);
+            Route::put('/questionnaire-categories/{id}',           [QuestionnaireCategoryController::class, 'update']);
+            Route::delete('/questionnaire-categories/{id}',        [QuestionnaireCategoryController::class, 'destroy']);
+            Route::patch('/questionnaire-categories/{id}/restore', [QuestionnaireCategoryController::class, 'restore']);
+
+            // Tipe Jawaban
+            Route::get('/answer-types/all',      [AnswerTypeController::class, 'all']);
+            Route::get('/answer-types',          [AnswerTypeController::class, 'index']);
+            Route::post('/answer-types',         [AnswerTypeController::class, 'store']);
+            Route::get('/answer-types/{id}',     [AnswerTypeController::class, 'show']);
+            Route::put('/answer-types/{id}',     [AnswerTypeController::class, 'update']);
+            Route::delete('/answer-types/{id}',  [AnswerTypeController::class, 'destroy']);
+
+            // Kuesioner
+            Route::get('/questionnaires/all',            [QuestionnaireController::class, 'all']);
+            Route::get('/questionnaires',                [QuestionnaireController::class, 'index']);
+            Route::post('/questionnaires',               [QuestionnaireController::class, 'store']);
+            Route::get('/questionnaires/{id}',           [QuestionnaireController::class, 'show']);
+            Route::put('/questionnaires/{id}',           [QuestionnaireController::class, 'update']);
+            Route::delete('/questionnaires/{id}',        [QuestionnaireController::class, 'destroy']);
+            Route::patch('/questionnaires/{id}/restore', [QuestionnaireController::class, 'restore']);
+
+            // Pertanyaan Kuesioner (nested)
+            Route::get('/questionnaires/{questionnaireId}/questions',                 [QuestionnaireQuestionController::class, 'index']);
+            Route::post('/questionnaires/{questionnaireId}/questions',                [QuestionnaireQuestionController::class, 'store']);
+            Route::patch('/questionnaires/{questionnaireId}/questions/reorder',       [QuestionnaireQuestionController::class, 'reorder']);
+            Route::get('/questionnaires/{questionnaireId}/questions/{id}',            [QuestionnaireQuestionController::class, 'show']);
+            Route::put('/questionnaires/{questionnaireId}/questions/{id}',            [QuestionnaireQuestionController::class, 'update']);
+            Route::delete('/questionnaires/{questionnaireId}/questions/{id}',         [QuestionnaireQuestionController::class, 'destroy']);
+            Route::patch('/questionnaires/{questionnaireId}/questions/{id}/restore',  [QuestionnaireQuestionController::class, 'restore']);
         });
 
-        // ─── Alumni Self-Service Routes ────────────────────────────────────────────────────
+        // ─── Alumni Self-Service Routes ────────────────────────────────────────────────────────────────
         Route::middleware('can:alumni')->prefix('alumni')->group(function () {
 
             // Profil & Status Pekerjaan
@@ -174,7 +215,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/requests/{id}',                  [AlumniSelfRequestController::class, 'cancel']);
         });
 
-        // ─── Employer Routes ────────────────────────────────────────────────────────────
+        // ─── Employer Routes ───────────────────────────────────────────────────────────────────
         Route::middleware('employer.token')->prefix('employer')->group(function () {
             //
         });
