@@ -9,21 +9,35 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('questionnaire_categories', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->string('name', 255);
+            // PRIMARY KEY — UUID CHAR(36), konsisten dengan seluruh Phase 1-3
+            $table->uuid('id')->primary();
+
+            $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
             $table->softDeletes();
-            $table->ulid('created_by')->nullable();
-            $table->ulid('updated_by')->nullable();
-            $table->ulid('deleted_by')->nullable();
 
-            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
+            // Audit fields — FK ke users.id (UUID CHAR(36))
+            $table->uuid('created_by')->nullable();
+            $table->uuid('updated_by')->nullable();
+            $table->uuid('deleted_by')->nullable();
 
-            $table->index(['is_active', 'deleted_at'], 'idx_qc_isactive');
+            $table->foreign('created_by')
+                ->references('id')->on('users')
+                ->onDelete('set null')
+                ->name('fk_qcat_created_by');
+
+            $table->foreign('updated_by')
+                ->references('id')->on('users')
+                ->onDelete('set null')
+                ->name('fk_qcat_updated_by');
+
+            $table->foreign('deleted_by')
+                ->references('id')->on('users')
+                ->onDelete('set null')
+                ->name('fk_qcat_deleted_by');
         });
     }
 
