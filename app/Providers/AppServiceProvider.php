@@ -2,12 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\Faculty;
+use App\Models\Institution;
+use App\Models\InstitutionDetail;
+use App\Models\Profession;
+use App\Models\ProfessionCategory;
+use App\Models\StudyProgram;
+use App\Models\User;
+use App\Observers\AuditTrailObserver;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\UserRepository;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +29,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::shouldBeStrict(! app()->isProduction());
+
+        // ─── Observer Registration ──────────────────────────────────────
+        // Model-model yang dicatat secara otomatis ke audit_trails
+        Faculty::observe(AuditTrailObserver::class);
+        StudyProgram::observe(AuditTrailObserver::class);
+        Profession::observe(AuditTrailObserver::class);
+        ProfessionCategory::observe(AuditTrailObserver::class);
+        Institution::observe(AuditTrailObserver::class);
+        InstitutionDetail::observe(AuditTrailObserver::class);
+        User::observe(AuditTrailObserver::class);
+
         $this->configureRateLimiting();
     }
 

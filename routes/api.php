@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\ActivityLogController;
+use App\Http\Controllers\Api\Admin\AuditTrailController;
 use App\Http\Controllers\Api\Admin\FacultyController;
 use App\Http\Controllers\Api\Admin\InstitutionController;
+use App\Http\Controllers\Api\Admin\InstitutionDetailController;
 use App\Http\Controllers\Api\Admin\ProfessionCategoryController;
 use App\Http\Controllers\Api\Admin\ProfessionController;
+use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\StudyProgramController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Auth\EmployerAccessController;
@@ -84,7 +88,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/professions/{id}',        [ProfessionController::class, 'destroy']);
             Route::patch('/professions/{id}/restore', [ProfessionController::class, 'restore']);
 
-            // Manajemen Institusi
+            // Manajemen Institusi + Detail
             Route::get('/institutions/all',                       [InstitutionController::class, 'all']);
             Route::get('/institutions',                           [InstitutionController::class, 'index']);
             Route::post('/institutions',                          [InstitutionController::class, 'store']);
@@ -92,8 +96,21 @@ Route::prefix('v1')->group(function () {
             Route::put('/institutions/{id}',                      [InstitutionController::class, 'update']);
             Route::delete('/institutions/{id}',                   [InstitutionController::class, 'destroy']);
             Route::patch('/institutions/{id}/restore',            [InstitutionController::class, 'restore']);
-            Route::get('/institutions/{id}/detail',               [InstitutionController::class, 'showDetail']);
-            Route::put('/institutions/{id}/detail',               [InstitutionController::class, 'updateDetail']);
+            Route::get('/institutions/{id}/detail',               [InstitutionDetailController::class, 'show']);
+            Route::put('/institutions/{id}/detail',               [InstitutionDetailController::class, 'upsert']);
+
+            // Audit Trail & Activity Log
+            Route::get('/audit-trails',              [AuditTrailController::class, 'index']);
+            Route::get('/audit-trails/{id}',         [AuditTrailController::class, 'show']);
+            Route::get('/activity-logs',             [ActivityLogController::class, 'index']);
+            Route::get('/activity-logs/{id}',        [ActivityLogController::class, 'show']);
+            Route::delete('/activity-logs',          [ActivityLogController::class, 'purge']);
+
+            // Pengaturan Aplikasi
+            Route::get('/settings',                  [SettingController::class, 'index']);
+            Route::get('/settings/{group}/{key}',    [SettingController::class, 'show']);
+            Route::put('/settings/{group}/{key}',    [SettingController::class, 'update']);
+            Route::put('/settings/batch',            [SettingController::class, 'batchUpdate']);
         });
 
         // ─── Alumni Routes ─────────────────────────────────────────

@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             ProfessionCategorySeeder::class,
             ProfessionSeeder::class,
             InstitutionSeeder::class,
+            AppSettingSeeder::class,
         ]);
     }
 }
