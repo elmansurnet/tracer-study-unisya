@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\ActivityLogController;
 use App\Http\Controllers\Api\Admin\AlumniController;
 use App\Http\Controllers\Api\Admin\AlumniEmploymentHistoryController;
+use App\Http\Controllers\Api\Admin\AlumniRequestController;
 use App\Http\Controllers\Api\Admin\AuditTrailController;
 use App\Http\Controllers\Api\Admin\FacultyController;
 use App\Http\Controllers\Api\Admin\InstitutionController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\Admin\ProfessionController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Admin\StudyProgramController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\AlumniSelf\AlumniRequestController as AlumniSelfRequestController;
 use App\Http\Controllers\Api\AlumniSelf\EmploymentHistoryController;
 use App\Http\Controllers\Api\AlumniSelf\ProfileController;
 use App\Http\Controllers\Api\Auth\EmployerAccessController;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    // ─── Auth (Public) ────────────────────────────────────────────────
+    // ─── Auth (Public) ──────────────────────────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login'])
             ->middleware('throttle:auth-login');
@@ -31,7 +33,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:otp-verify');
     });
 
-    // ─── Employer (Public) ───────────────────────────────────────────
+    // ─── Employer (Public) ───────────────────────────────────────────────────────────────
     Route::prefix('employer')->group(function () {
         Route::post('/otp/request', [EmployerAccessController::class, 'requestOtp'])
             ->middleware('throttle:otp-request');
@@ -39,12 +41,12 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:otp-verify');
     });
 
-    // ─── Authenticated Routes ─────────────────────────────────────────
+    // ─── Authenticated Routes ──────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'ensure.active'])->group(function () {
         Route::post('/auth/logout', [LoginController::class, 'logout']);
         Route::get('/auth/me',     [LoginController::class, 'me']);
 
-        // ─── Admin Routes ──────────────────────────────────────────
+        // ─── Admin Routes ───────────────────────────────────────────────────────────
         Route::middleware('can:admin')->prefix('admin')->group(function () {
 
             // Manajemen Pengguna
@@ -124,6 +126,17 @@ Route::prefix('v1')->group(function () {
             Route::delete('/alumni/{alumniId}/employment-histories/{id}',              [AlumniEmploymentHistoryController::class, 'destroy']);
             Route::patch('/alumni/{alumniId}/employment-histories/{id}/restore',       [AlumniEmploymentHistoryController::class, 'restore']);
 
+            // Permohonan Alumni (Admin)
+            Route::get('/alumni-requests/count-pending',       [AlumniRequestController::class, 'countPending']);
+            Route::get('/alumni-requests',                     [AlumniRequestController::class, 'index']);
+            Route::post('/alumni-requests',                    [AlumniRequestController::class, 'store']);
+            Route::get('/alumni-requests/{id}',                [AlumniRequestController::class, 'show']);
+            Route::put('/alumni-requests/{id}',                [AlumniRequestController::class, 'update']);
+            Route::delete('/alumni-requests/{id}',             [AlumniRequestController::class, 'destroy']);
+            Route::patch('/alumni-requests/{id}/restore',      [AlumniRequestController::class, 'restore']);
+            Route::post('/alumni-requests/{id}/approve',       [AlumniRequestController::class, 'approve']);
+            Route::post('/alumni-requests/{id}/reject',        [AlumniRequestController::class, 'reject']);
+
             // Audit Trail & Activity Log
             Route::get('/audit-trails',              [AuditTrailController::class, 'index']);
             Route::get('/audit-trails/{id}',         [AuditTrailController::class, 'show']);
@@ -138,7 +151,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/settings/batch',            [SettingController::class, 'batchUpdate']);
         });
 
-        // ─── Alumni Self-Service Routes ────────────────────────────
+        // ─── Alumni Self-Service Routes ────────────────────────────────────────────────────
         Route::middleware('can:alumni')->prefix('alumni')->group(function () {
 
             // Profil & Status Pekerjaan
@@ -153,9 +166,15 @@ Route::prefix('v1')->group(function () {
             Route::put('/employment-histories/{id}',         [EmploymentHistoryController::class, 'update']);
             Route::delete('/employment-histories/{id}',      [EmploymentHistoryController::class, 'destroy']);
             Route::patch('/employment-histories/{id}/restore', [EmploymentHistoryController::class, 'restore']);
+
+            // Permohonan Perubahan Data (self-service)
+            Route::get('/requests',                          [AlumniSelfRequestController::class, 'index']);
+            Route::post('/requests',                         [AlumniSelfRequestController::class, 'store']);
+            Route::get('/requests/{id}',                     [AlumniSelfRequestController::class, 'show']);
+            Route::delete('/requests/{id}',                  [AlumniSelfRequestController::class, 'cancel']);
         });
 
-        // ─── Employer Routes ───────────────────────────────────────
+        // ─── Employer Routes ────────────────────────────────────────────────────────────
         Route::middleware('employer.token')->prefix('employer')->group(function () {
             //
         });
