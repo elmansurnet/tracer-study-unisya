@@ -3,16 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\Institution;
-use App\Models\InstitutionDetail;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class InstitutionRepository
 {
-    public function __construct(
-        protected Institution $model,
-        protected InstitutionDetail $detailModel
-    ) {}
+    public function __construct(protected Institution $model) {}
 
     public function paginate(
         int $perPage = 15,
@@ -22,7 +18,6 @@ class InstitutionRepository
     ): LengthAwarePaginator {
         return $this->model
             ->newQuery()
-            ->with('detail')
             ->when(isset($filters['search']), fn ($q) =>
                 $q->where(fn ($q2) =>
                     $q2->where('name', 'like', "%{$filters['search']}%")
@@ -41,6 +36,14 @@ class InstitutionRepository
         return $this->model->with('detail')->find($id);
     }
 
+    public function findByName(string $name, ?string $exceptId = null): ?Institution
+    {
+        return $this->model
+            ->where('name', $name)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->first();
+    }
+
     public function create(array $data): Institution
     {
         return $this->model->create($data);
@@ -50,14 +53,6 @@ class InstitutionRepository
     {
         $institution->update($data);
         return $institution->fresh(['detail']);
-    }
-
-    public function upsertDetail(Institution $institution, array $data): InstitutionDetail
-    {
-        return $this->detailModel->updateOrCreate(
-            ['institution_id' => $institution->id],
-            $data
-        );
     }
 
     public function softDelete(Institution $institution, string $deletedBy): bool

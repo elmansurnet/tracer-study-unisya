@@ -15,10 +15,26 @@ class InstitutionFactory extends Factory
         return [
             'id'        => Str::ulid(),
             'name'      => $this->faker->unique()->company(),
-            'type'      => $this->faker->randomElement(['pemerintah', 'swasta', 'bumn', 'pendidikan', 'lainnya']),
+            'type'      => $this->faker->randomElement(['swasta', 'pemerintah', 'bumn', 'lainnya']),
             'sector'    => $this->faker->optional()->word(),
             'website'   => $this->faker->optional()->url(),
-            'is_active' => 1,
+            'logo'      => null,
+            'is_active' => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(['is_active' => false]);
+    }
+
+    public function swasta(): static
+    {
+        return $this->state(['type' => 'swasta']);
+    }
+
+    public function pemerintah(): static
+    {
+        return $this->state(['type' => 'pemerintah']);
     }
 }

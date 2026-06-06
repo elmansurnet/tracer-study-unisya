@@ -32,6 +32,14 @@ class ProfessionCategoryRepository
         return $this->model->withCount('professions')->find($id);
     }
 
+    public function findByName(string $name, ?string $exceptId = null): ?ProfessionCategory
+    {
+        return $this->model
+            ->where('name', $name)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->first();
+    }
+
     public function create(array $data): ProfessionCategory
     {
         return $this->model->create($data);
@@ -65,6 +73,7 @@ class ProfessionCategoryRepository
     {
         return $this->model
             ->where('is_active', 1)
+            ->withCount('professions')
             ->orderBy('name')
             ->get();
     }

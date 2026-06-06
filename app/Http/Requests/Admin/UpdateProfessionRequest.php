@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateProfessionRequest extends FormRequest
 {
@@ -15,15 +14,10 @@ class UpdateProfessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'profession_category_id' => [
-                'sometimes',
-                'required',
-                'string',
-                Rule::exists('profession_categories', 'id')->whereNull('deleted_at'),
-            ],
-            'name'        => ['sometimes', 'required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'is_active'   => ['sometimes', 'boolean'],
+            'profession_category_id' => ['sometimes', 'required', 'string', 'exists:profession_categories,id'],
+            'name'                   => ['sometimes', 'required', 'string', 'max:255'],
+            'description'            => ['nullable', 'string', 'max:1000'],
+            'is_active'              => ['sometimes', 'boolean'],
         ];
     }
 

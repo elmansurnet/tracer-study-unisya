@@ -7,11 +7,12 @@ use App\Models\User;
 use App\Repositories\ProfessionCategoryRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProfessionCategoryService
 {
     public function __construct(
-        protected ProfessionCategoryRepository $repository,
+        protected ProfessionCategoryRepository $categoryRepository,
         protected AuditService $auditService
     ) {}
 
@@ -21,12 +22,12 @@ class ProfessionCategoryService
         string $sortBy = 'name',
         string $sortDir = 'asc'
     ): LengthAwarePaginator {
-        return $this->repository->paginate($perPage, $filters, $sortBy, $sortDir);
+        return $this->categoryRepository->paginate($perPage, $filters, $sortBy, $sortDir);
     }
 
     public function findOrFail(string $id): ProfessionCategory
     {
-        $category = $this->repository->findById($id);
+        $category = $this->categoryRepository->findById($id);
         if (! $category) {
             abort(404, 'Kategori profesi tidak ditemukan.');
         }
@@ -35,7 +36,14 @@ class ProfessionCategoryService
 
     public function create(array $validated, User $actor): ProfessionCategory
     {
-        $category = $this->repository->create([
+        $existing = $this->categoryRepository->findByName($validated['name']);
+        if ($existing) {
+            throw ValidationException::withMessages([
+                'name' => ['Nama kategori profesi sudah digunakan.'],
+            ]);
+        }
+
+        $category = $this->categoryRepository->create([
             'id'          => Str::ulid(),
             'name'        => $validated['name'],
             'description' => $validated['description'] ?? null,
@@ -56,6 +64,15 @@ class ProfessionCategoryService
 
     public function update(ProfessionCategory $category, array $validated, User $actor): ProfessionCategory
     {
+        if (isset($validated['name'])) {
+            $conflict = $this->categoryRepository->findByName($validated['name'], $category->id);
+            if ($conflict) {
+                throw ValidationException::withMessages([
+                    'name' => ['Nama kategori profesi sudah digunakan.'],
+                ]);
+            }
+        }
+
         $oldValues = $category->toArray();
 
         $updateData = array_filter([
@@ -65,7 +82,7 @@ class ProfessionCategoryService
             'updated_by'  => $actor->id,
         ], fn ($v) => $v !== null);
 
-        $updated = $this->repository->update($category, $updateData);
+        $updated = $this->categoryRepository->update($category, $updateData);
 
         $this->auditService->log(
             event: 'updated',
@@ -81,7 +98,7 @@ class ProfessionCategoryService
     public function delete(ProfessionCategory $category, User $actor): void
     {
         if ($category->professions()->exists()) {
-            abort(422, 'Kategori profesi tidak dapat dihapus karena masih memiliki data profesi.');
+            abort(422, 'Kategori profesi tidak dapat dihapus karena masih memiliki profesi.');
         }
 
         $this->auditService->log(
@@ -91,12 +108,12 @@ class ProfessionCategoryService
             actor: $actor
         );
 
-        $this->repository->softDelete($category, $actor->id);
+        $this->categoryRepository->softDelete($category, $actor->id);
     }
 
     public function restore(string $id, User $actor): ProfessionCategory
     {
-        $category = $this->repository->restore($id);
+        $category = $this->categoryRepository->restore($id);
         if (! $category) {
             abort(404, 'Kategori profesi tidak ditemukan atau sudah aktif.');
         }
@@ -113,6 +130,6 @@ class ProfessionCategoryService
 
     public function allActive(): \Illuminate\Support\Collection
     {
-        return $this->repository->allActive();
+        return $this->categoryRepository->allActive();
     }
 }

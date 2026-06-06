@@ -23,7 +23,7 @@ class StoreProfessionCategoryRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name'        => 'Nama Kategori',
+            'name'        => 'Nama Kategori Profesi',
             'description' => 'Deskripsi',
             'is_active'   => 'Status Aktif',
         ];

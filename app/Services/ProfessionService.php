@@ -7,11 +7,12 @@ use App\Models\User;
 use App\Repositories\ProfessionRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProfessionService
 {
     public function __construct(
-        protected ProfessionRepository $repository,
+        protected ProfessionRepository $professionRepository,
         protected AuditService $auditService
     ) {}
 
@@ -21,12 +22,12 @@ class ProfessionService
         string $sortBy = 'name',
         string $sortDir = 'asc'
     ): LengthAwarePaginator {
-        return $this->repository->paginate($perPage, $filters, $sortBy, $sortDir);
+        return $this->professionRepository->paginate($perPage, $filters, $sortBy, $sortDir);
     }
 
     public function findOrFail(string $id): Profession
     {
-        $profession = $this->repository->findById($id);
+        $profession = $this->professionRepository->findById($id);
         if (! $profession) {
             abort(404, 'Profesi tidak ditemukan.');
         }
@@ -35,7 +36,17 @@ class ProfessionService
 
     public function create(array $validated, User $actor): Profession
     {
-        $profession = $this->repository->create([
+        $existing = $this->professionRepository->findByNameInCategory(
+            $validated['name'],
+            $validated['profession_category_id']
+        );
+        if ($existing) {
+            throw ValidationException::withMessages([
+                'name' => ['Nama profesi sudah ada dalam kategori ini.'],
+            ]);
+        }
+
+        $profession = $this->professionRepository->create([
             'id'                     => Str::ulid(),
             'profession_category_id' => $validated['profession_category_id'],
             'name'                   => $validated['name'],
@@ -57,6 +68,22 @@ class ProfessionService
 
     public function update(Profession $profession, array $validated, User $actor): Profession
     {
+        $targetCategoryId = $validated['profession_category_id'] ?? $profession->profession_category_id;
+        $targetName       = $validated['name'] ?? $profession->name;
+
+        if (isset($validated['name']) || isset($validated['profession_category_id'])) {
+            $conflict = $this->professionRepository->findByNameInCategory(
+                $targetName,
+                $targetCategoryId,
+                $profession->id
+            );
+            if ($conflict) {
+                throw ValidationException::withMessages([
+                    'name' => ['Nama profesi sudah ada dalam kategori ini.'],
+                ]);
+            }
+        }
+
         $oldValues = $profession->toArray();
 
         $updateData = array_filter([
@@ -67,7 +94,7 @@ class ProfessionService
             'updated_by'             => $actor->id,
         ], fn ($v) => $v !== null);
 
-        $updated = $this->repository->update($profession, $updateData);
+        $updated = $this->professionRepository->update($profession, $updateData);
 
         $this->auditService->log(
             event: 'updated',
@@ -89,12 +116,12 @@ class ProfessionService
             actor: $actor
         );
 
-        $this->repository->softDelete($profession, $actor->id);
+        $this->professionRepository->softDelete($profession, $actor->id);
     }
 
     public function restore(string $id, User $actor): Profession
     {
-        $profession = $this->repository->restore($id);
+        $profession = $this->professionRepository->restore($id);
         if (! $profession) {
             abort(404, 'Profesi tidak ditemukan atau sudah aktif.');
         }
@@ -109,8 +136,8 @@ class ProfessionService
         return $profession;
     }
 
-    public function allActive(): \Illuminate\Support\Collection
+    public function allActive(?string $categoryId = null): \Illuminate\Support\Collection
     {
-        return $this->repository->allActive();
+        return $this->professionRepository->allActive($categoryId);
     }
 }

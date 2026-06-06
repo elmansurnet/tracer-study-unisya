@@ -34,6 +34,15 @@ class ProfessionRepository
         return $this->model->with('category:id,name')->find($id);
     }
 
+    public function findByNameInCategory(string $name, string $categoryId, ?string $exceptId = null): ?Profession
+    {
+        return $this->model
+            ->where('name', $name)
+            ->where('profession_category_id', $categoryId)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->first();
+    }
+
     public function create(array $data): Profession
     {
         return $this->model->create($data);
@@ -63,11 +72,12 @@ class ProfessionRepository
         return $profession;
     }
 
-    public function allActive(): Collection
+    public function allActive(?string $categoryId = null): Collection
     {
         return $this->model
             ->where('is_active', 1)
             ->with('category:id,name')
+            ->when($categoryId, fn ($q) => $q->where('profession_category_id', $categoryId))
             ->orderBy('name')
             ->get();
     }

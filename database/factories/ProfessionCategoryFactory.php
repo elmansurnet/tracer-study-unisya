@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\ProfessionCategory;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -15,9 +14,14 @@ class ProfessionCategoryFactory extends Factory
     {
         return [
             'id'          => Str::ulid(),
-            'name'        => $this->faker->unique()->words(3, true),
+            'name'        => $this->faker->unique()->words(2, true),
             'description' => $this->faker->optional()->sentence(),
-            'is_active'   => 1,
+            'is_active'   => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(['is_active' => false]);
     }
 }

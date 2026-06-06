@@ -2,37 +2,69 @@
 
 namespace Database\Seeders;
 
-use App\Models\ProfessionCategory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ProfessionCategorySeeder extends Seeder
 {
+    /**
+     * Kategori profesi umum untuk alumni tracer study.
+     */
     public function run(): void
     {
         $categories = [
-            ['name' => 'Teknologi Informasi', 'description' => 'Bidang IT, software, hardware, dan sistem informasi'],
-            ['name' => 'Pendidikan',           'description' => 'Tenaga pengajar, dosen, tutor, dan instruktur'],
-            ['name' => 'Kesehatan',            'description' => 'Dokter, perawat, apoteker, dan tenaga medis lainnya'],
-            ['name' => 'Keuangan & Akuntansi', 'description' => 'Akuntan, auditor, analis keuangan, dan banker'],
-            ['name' => 'Hukum',                'description' => 'Pengacara, notaris, hakim, dan konsultan hukum'],
-            ['name' => 'Teknik',               'description' => 'Insinyur sipil, mesin, elektro, dan industri'],
-            ['name' => 'Bisnis & Manajemen',   'description' => 'Manajer, entrepreneur, konsultan bisnis'],
-            ['name' => 'Pertanian & Peternakan','description' => 'Agronomi, peternakan, kehutanan, dan perikanan'],
-            ['name' => 'Seni & Desain',         'description' => 'Desainer grafis, animator, fotografer, seniman'],
-            ['name' => 'Komunikasi & Media',    'description' => 'Jurnalis, penyiar, PR, dan content creator'],
-            ['name' => 'Lainnya',               'description' => 'Bidang pekerjaan lain yang tidak terklasifikasi'],
+            [
+                'name'        => 'Pendidikan dan Pelatihan',
+                'description' => 'Profesi di bidang pendidikan formal, non-formal, dan pelatihan SDM.',
+            ],
+            [
+                'name'        => 'Hukum dan Kepatuhan',
+                'description' => 'Profesi di bidang hukum, advokasi, kepatuhan regulasi, dan notariat.',
+            ],
+            [
+                'name'        => 'Ekonomi dan Keuangan',
+                'description' => 'Profesi di bidang ekonomi, akuntansi, perbankan, dan keuangan.',
+            ],
+            [
+                'name'        => 'Teknologi dan Informatika',
+                'description' => 'Profesi di bidang teknologi informasi, rekayasa perangkat lunak, dan sistem informasi.',
+            ],
+            [
+                'name'        => 'Teknik dan Infrastruktur',
+                'description' => 'Profesi di bidang teknik sipil, arsitektur, dan infrastruktur.',
+            ],
+            [
+                'name'        => 'Kesehatan dan Medis',
+                'description' => 'Profesi di bidang kesehatan, kedokteran, keperawatan, dan farmasi.',
+            ],
+            [
+                'name'        => 'Agama dan Dakwah',
+                'description' => 'Profesi di bidang keagamaan, dakwah, dan penyuluhan agama.',
+            ],
+            [
+                'name'        => 'Pemerintahan dan Administrasi Publik',
+                'description' => 'Profesi di sektor pemerintahan, birokrasi, dan pelayanan publik.',
+            ],
+            [
+                'name'        => 'Bisnis dan Wirausaha',
+                'description' => 'Profesi di bidang wirausaha, manajemen bisnis, dan perdagangan.',
+            ],
+            [
+                'name'        => 'Sosial dan Kemasyarakatan',
+                'description' => 'Profesi di bidang pekerjaan sosial, pemberdayaan masyarakat, dan LSM.',
+            ],
         ];
 
-        foreach ($categories as $data) {
-            ProfessionCategory::firstOrCreate(
-                ['name' => $data['name']],
-                [
-                    'id'          => Str::ulid(),
-                    'description' => $data['description'],
-                    'is_active'   => 1,
-                ]
-            );
+        foreach ($categories as $category) {
+            DB::table('profession_categories')->insertOrIgnore([
+                'id'          => Str::ulid(),
+                'name'        => $category['name'],
+                'description' => $category['description'],
+                'is_active'   => 1,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
         }
     }
 }

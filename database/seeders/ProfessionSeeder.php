@@ -2,85 +2,113 @@
 
 namespace Database\Seeders;
 
-use App\Models\Profession;
-use App\Models\ProfessionCategory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ProfessionSeeder extends Seeder
 {
+    /**
+     * Seed profesi berdasarkan kategori yang sudah ada di tabel profession_categories.
+     */
     public function run(): void
     {
-        $data = [
-            'Teknologi Informasi' => [
-                'Software Engineer', 'Frontend Developer', 'Backend Developer',
-                'Full Stack Developer', 'Mobile Developer', 'DevOps Engineer',
-                'Data Scientist', 'Data Analyst', 'UI/UX Designer',
-                'System Analyst', 'Database Administrator', 'Network Engineer',
-                'IT Support', 'Cybersecurity Analyst', 'Project Manager IT',
+        $map = [
+            'Pendidikan dan Pelatihan' => [
+                'Guru / Pengajar',
+                'Dosen',
+                'Instruktur / Trainer',
+                'Kepala Sekolah',
+                'Konselor Pendidikan',
             ],
-            'Pendidikan' => [
-                'Dosen', 'Guru SD/SMP/SMA', 'Instruktur Pelatihan',
-                'Tutor Privat', 'Konselor Pendidikan',
+            'Hukum dan Kepatuhan' => [
+                'Advokat / Pengacara',
+                'Notaris',
+                'Hakim',
+                'Jaksa',
+                'Legal Officer',
+                'Compliance Officer',
             ],
-            'Kesehatan' => [
-                'Dokter Umum', 'Dokter Spesialis', 'Perawat',
-                'Apoteker', 'Bidan', 'Ahli Gizi', 'Fisioterapis',
-                'Radiografer', 'Analis Laboratorium',
+            'Ekonomi dan Keuangan' => [
+                'Akuntan',
+                'Auditor',
+                'Analis Keuangan',
+                'Bankir',
+                'Konsultan Pajak',
+                'Manajer Keuangan',
             ],
-            'Keuangan & Akuntansi' => [
-                'Akuntan', 'Auditor', 'Analis Keuangan',
-                'Staff Perpajakan', 'Treasury Staff', 'Financial Controller',
+            'Teknologi dan Informatika' => [
+                'Programmer / Software Developer',
+                'Data Analyst',
+                'System Administrator',
+                'UI/UX Designer',
+                'Network Engineer',
+                'Cyber Security Analyst',
             ],
-            'Teknik' => [
-                'Insinyur Sipil', 'Insinyur Mesin', 'Insinyur Elektro',
-                'Insinyur Industri', 'Insinyur Kimia', 'Insinyur Pertambangan',
-                'Quality Control Engineer', 'Quantity Surveyor',
+            'Teknik dan Infrastruktur' => [
+                'Insinyur Sipil',
+                'Arsitek',
+                'Insinyur Mesin',
+                'Insinyur Elektro',
+                'Quantity Surveyor',
             ],
-            'Bisnis & Manajemen' => [
-                'Marketing Manager', 'Business Analyst', 'HR Manager',
-                'Operations Manager', 'General Manager', 'Entrepreneur',
-                'Sales Executive', 'Supply Chain Manager',
+            'Kesehatan dan Medis' => [
+                'Dokter Umum',
+                'Dokter Spesialis',
+                'Perawat',
+                'Apoteker',
+                'Bidan',
+                'Tenaga Kesehatan Masyarakat',
             ],
-            'Komunikasi & Media' => [
-                'Jurnalis', 'Editor', 'Content Creator',
-                'Public Relations', 'Broadcaster', 'Fotografer',
-                'Videografer', 'Social Media Specialist',
+            'Agama dan Dakwah' => [
+                'Ustadz / Mubaligh',
+                'Penyuluh Agama',
+                'Imam Masjid',
+                'Pegawai KUA',
+                'Da\'i',
             ],
-            'Seni & Desain' => [
-                'Desainer Grafis', 'Animator', 'Ilustrator',
-                'Arsitek', 'Interior Designer', 'Fashion Designer',
+            'Pemerintahan dan Administrasi Publik' => [
+                'Pegawai Negeri Sipil (PNS)',
+                'Aparatur Sipil Negara (ASN)',
+                'TNI / Polri',
+                'Staf Kelurahan / Kecamatan',
+                'Anggota DPRD',
             ],
-            'Hukum' => [
-                'Pengacara', 'Notaris', 'Hakim',
-                'Jaksa', 'Konsultan Hukum', 'Legal Staff',
+            'Bisnis dan Wirausaha' => [
+                'Wirausahawan',
+                'Manajer Pemasaran',
+                'Sales Manager',
+                'Konsultan Bisnis',
+                'E-Commerce Entrepreneur',
             ],
-            'Pertanian & Peternakan' => [
-                'Agronomist', 'Penyuluh Pertanian', 'Peneliti Pertanian',
-                'Peternak', 'Ahli Kehutanan', 'Ahli Perikanan',
-            ],
-            'Lainnya' => [
-                'Wirausaha', 'Freelancer', 'Konsultan Independen',
+            'Sosial dan Kemasyarakatan' => [
+                'Pekerja Sosial',
+                'Peneliti Sosial',
+                'Aktivis LSM / NGO',
+                'Fasilitator Komunitas',
+                'Konselor Sosial',
             ],
         ];
 
-        foreach ($data as $categoryName => $professions) {
-            $category = ProfessionCategory::where('name', $categoryName)->first();
+        foreach ($map as $categoryName => $professions) {
+            $category = DB::table('profession_categories')
+                ->where('name', $categoryName)
+                ->first();
+
             if (! $category) {
                 continue;
             }
 
             foreach ($professions as $professionName) {
-                Profession::firstOrCreate(
-                    [
-                        'profession_category_id' => $category->id,
-                        'name'                   => $professionName,
-                    ],
-                    [
-                        'id'        => Str::ulid(),
-                        'is_active' => 1,
-                    ]
-                );
+                DB::table('professions')->insertOrIgnore([
+                    'id'                     => Str::ulid(),
+                    'profession_category_id' => $category->id,
+                    'name'                   => $professionName,
+                    'description'            => null,
+                    'is_active'              => 1,
+                    'created_at'             => now(),
+                    'updated_at'             => now(),
+                ]);
             }
         }
     }
