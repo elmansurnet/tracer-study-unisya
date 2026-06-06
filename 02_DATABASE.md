@@ -1,25 +1,38 @@
 # 02_DATABASE.md — Desain Database Tracer Study UNISYA
 
-**Versi:** 1.0.2
+**Versi:** 1.1.0
 **Tanggal Dibuat:** 2026-06-05
+**Tanggal Diperbarui:** 2026-06-06
 **Database Engine:** MySQL 8.0+
 **Charset:** utf8mb4
 **Collation:** utf8mb4_unicode_ci
 
 ---
 
-### Revisi minor v1.0.2
+## RIWAYAT REVISI
 
-1. Pada tabel `users`, pertahankan enum role final:
-   - `'super_admin', 'alumni'`
+| Versi | Tanggal | Perubahan |
+|-------|---------|-----------|
+| 1.0.0 | 2026-06-04 | Versi awal — semua PK/FK menggunakan CHAR(36) UUID |
+| 1.0.1 | 2026-06-05 | Koreksi enum role users; catatan nullable tracer_study_id |
+| 1.0.2 | 2026-06-05 | Finalisasi enum role 'super_admin','alumni'; istilah Employer; catatan FK circular dependency |
+| **1.1.0** | **2026-06-06** | **BREAKING: Koreksi seluruh PK/FK dari CHAR(36) UUID ke CHAR(26) ULID — sesuai implementasi aktual `HasUlids` di semua model Phase 1–3. Catatan migrasi duplikat ditambahkan.** |
 
-2. Pada tabel `employer_access_tokens`, tambahkan catatan implementasi:
-   - `tracer_study_id` boleh dibuat nullable pada migration utama.
-   - Foreign key `tracer_study_id -> tracer_studies.id` dapat dipasang melalui migration tambahan terpisah untuk menghindari circular dependency urutan migrasi.
+---
 
-3. Istilah aktor:
-   - Gunakan istilah **Employer (Pengguna Alumni)** secara konsisten di seluruh dokumen.
-   - Hindari pencampuran istilah `Pengguna Alumni` sebagai nama role teknis database; role teknis tetap hanya `super_admin` dan `alumni`.
+## KEPUTUSAN TEKNIS — PRIMARY KEY
+
+> **Keputusan Final (2026-06-06):** Seluruh Primary Key dan Foreign Key menggunakan **ULID** yang disimpan sebagai **`CHAR(26)`**, bukan UUID CHAR(36).
+>
+> **Alasan:**
+> - Semua model aktif menggunakan trait `HasUlids` dari `Illuminate\Database\Eloquent\Concerns\HasUlids`
+> - Migration aktif menggunakan `$table->ulid('id')->primary()`
+> - ULID lebih efisien (26 karakter vs 36) dan tetap sortable secara kronologis
+> - Seluruh FK menggunakan `$table->char('{ref}_id', 26)->nullable()` untuk konsistensi
+>
+> **Tabel yang TIDAK menggunakan ULID (pengecualian):**
+> - `personal_access_tokens` — PK adalah BIGINT AUTO_INCREMENT (Laravel Sanctum default)
+> - `jobs`, `failed_jobs`, `cache`, `sessions` — tabel Laravel bawaan, PK bervariasi
 
 ---
 
@@ -27,10 +40,11 @@
 
 - Nama tabel: `snake_case`, bentuk jamak
 - Nama kolom: `snake_case`
-- Primary Key: `id` (UUID v7 / ULID, CHAR(36))
-- Foreign Key: `{tabel_referensi_singular}_id` (CHAR(36))
+- **Primary Key: `id` (ULID, CHAR(26))** — menggunakan `$table->ulid('id')->primary()`
+- **Foreign Key: `{tabel_referensi_singular}_id` (CHAR(26))** — menggunakan `$table->char('{ref}_id', 26)`
 - Audit fields wajib: `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`
 - Normalisasi minimal: 3NF
+- Named index: `idx_{tabel_singkat}_{kolom}`, Named FK: `fk_{tabel_singkat}_{kolom}`
 
 ---
 
@@ -40,19 +54,19 @@
 
 ---
 
-#### A1. `users` (UPDATED ENUM ROLE)
+#### A1. `users`
 Menyimpan akun pengguna sistem (Super Admin dan Alumni).
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK, NOT NULL | UUID |
+| id | CHAR(26) | PK, NOT NULL | **ULID** |
 | name | VARCHAR(255) | NOT NULL | Nama lengkap |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | Email login |
 | email_verified_at | TIMESTAMP | NULL | Waktu verifikasi email |
 | password | VARCHAR(255) | NOT NULL | Hash bcrypt |
 | phone | VARCHAR(20) | NULL | Nomor WhatsApp |
 | phone_verified_at | TIMESTAMP | NULL | Waktu verifikasi WA |
-| role | ENUM | NOT NULL | 'super_admin', 'alumni' |
+| role | ENUM | NOT NULL | `'super_admin', 'alumni'` |
 | is_active | TINYINT(1) | DEFAULT 1 | Status aktif akun |
 | last_login_at | TIMESTAMP | NULL | Waktu login terakhir |
 | last_login_ip | VARCHAR(45) | NULL | IP login terakhir |
@@ -60,9 +74,9 @@ Menyimpan akun pengguna sistem (Super Admin dan Alumni).
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 **Indeks:** `email` (UNIQUE), `role`, `is_active`, `deleted_at`
 
@@ -71,11 +85,14 @@ Menyimpan akun pengguna sistem (Super Admin dan Alumni).
 #### A2. `personal_access_tokens`
 Token Sanctum untuk API authentication (Laravel default).
 
+> ⚠️ **Pengecualian:** PK adalah `BIGINT UNSIGNED AUTO_INCREMENT` (standar Laravel Sanctum).
+> `tokenable_id` menggunakan `CHAR(26)` agar kompatibel dengan ULID users.
+
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
 | id | BIGINT UNSIGNED | PK AUTO_INCREMENT | — |
 | tokenable_type | VARCHAR(255) | NOT NULL | Polymorphic type |
-| tokenable_id | CHAR(36) | NOT NULL | Polymorphic ID |
+| tokenable_id | CHAR(26) | NOT NULL | **ULID** — ID model (users) |
 | name | VARCHAR(255) | NOT NULL | Nama token |
 | token | VARCHAR(64) | UNIQUE NOT NULL | Hash token |
 | abilities | TEXT | NULL | JSON abilities |
@@ -84,19 +101,23 @@ Token Sanctum untuk API authentication (Laravel default).
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 
+**Catatan implementasi:** Migration `2026_06_05_000001_fix_personal_access_tokens_tokenable_id_to_char36.php` mengubah `tokenable_id` dari default Laravel menjadi `CHAR(26)` agar kompatibel dengan ULID.
+
 ---
 
 #### A3. `otp_verifications`
 Menyimpan OTP untuk verifikasi alumni dan employer.
 
+> **Nama tabel aktif:** `otp_verifications` (migration: `2026_06_04_000003_create_otp_verifications_table.php`)
+
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | identifier | VARCHAR(255) | NOT NULL | Email atau nomor HP |
-| identifier_type | ENUM | NOT NULL | 'email', 'whatsapp' |
-| otp_code | VARCHAR(10) | NOT NULL | Kode OTP (hashed) |
-| purpose | ENUM | NOT NULL | 'login', 'employer_access', 'phone_verify', 'email_verify' |
-| reference_id | CHAR(36) | NULL | ID referensi (employer_access_tokens.id, dsb) |
+| identifier_type | ENUM | NOT NULL | `'email', 'whatsapp'` |
+| otp_code | VARCHAR(10) | NOT NULL | Kode OTP (hashed bcrypt) |
+| purpose | ENUM | NOT NULL | `'login', 'employer_access', 'phone_verify', 'email_verify'` |
+| reference_id | CHAR(26) | NULL | ID referensi (employer_access_tokens.id, dsb) |
 | attempts | TINYINT | DEFAULT 0 | Jumlah percobaan |
 | max_attempts | TINYINT | DEFAULT 5 | Batas maksimal percobaan |
 | is_used | TINYINT(1) | DEFAULT 0 | Sudah digunakan? |
@@ -111,17 +132,17 @@ Menyimpan OTP untuk verifikasi alumni dan employer.
 ---
 
 #### A4. `employer_access_tokens`
-Token akses khusus untuk Pengguna Alumni (employer) — tanpa registrasi.
+Token akses khusus untuk Employer (Pengguna Alumni) — tanpa registrasi.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| alumni_id | CHAR(36) | FK alumni.id, NOT NULL | Alumni yang mengundang |
-| institution_id | CHAR(36) | FK institutions.id, NOT NULL | Institusi employer |
+| id | CHAR(26) | PK | **ULID** |
+| alumni_id | CHAR(26) | FK alumni.id, NOT NULL | Alumni yang mengundang |
+| institution_id | CHAR(26) | FK institutions.id, NOT NULL | Institusi employer |
 | contact_name | VARCHAR(255) | NOT NULL | Nama kontak employer |
 | contact_phone | VARCHAR(20) | NULL | Nomor WA employer |
 | contact_email | VARCHAR(255) | NULL | Email employer |
-| token | VARCHAR(64) | UNIQUE, NOT NULL | Token unik (hashed) |
+| token | VARCHAR(64) | UNIQUE, NOT NULL | Token unik (hashed SHA-256) |
 | token_plain | VARCHAR(64) | NULL | Plain token untuk pengiriman (di-null setelah dikirim) |
 | is_used | TINYINT(1) | DEFAULT 0 | Sudah digunakan? |
 | is_revoked | TINYINT(1) | DEFAULT 0 | Dicabut oleh admin? |
@@ -129,16 +150,18 @@ Token akses khusus untuk Pengguna Alumni (employer) — tanpa registrasi.
 | expires_at | TIMESTAMP | NULL | Waktu kadaluarsa |
 | used_at | TIMESTAMP | NULL | Waktu pertama akses |
 | revoked_at | TIMESTAMP | NULL | Waktu pencabutan |
-| revoked_by | CHAR(36) | NULL, FK users.id | Yang mencabut |
-| tracer_study_id | CHAR(36) | NULL, FK tracer_studies.id | Sesi tracer study terkait |
+| revoked_by | CHAR(26) | NULL, FK users.id | Yang mencabut |
+| tracer_study_id | CHAR(26) | NULL, FK tracer_studies.id | Sesi tracer study terkait |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 **Indeks:** `token` (UNIQUE), `alumni_id`, `institution_id`, `is_used`, `is_revoked`, `expires_at`
+
+**Catatan implementasi:** FK `tracer_study_id -> tracer_studies.id` dipasang via migration terpisah `2026_06_04_000019_add_tracer_study_fk_to_employer_access_tokens.php` untuk menghindari circular dependency urutan migrasi.
 
 ---
 
@@ -151,7 +174,7 @@ Data Fakultas UNISYA.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | code | VARCHAR(20) | UNIQUE, NOT NULL | Kode fakultas |
 | name | VARCHAR(255) | NOT NULL | Nama fakultas |
 | description | TEXT | NULL | Deskripsi |
@@ -159,9 +182,11 @@ Data Fakultas UNISYA.
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_04_000004_create_faculties_table.php`. File `2025_01_03_000001_create_faculties_table.php` adalah duplikat lama dan harus dihapus.
 
 ---
 
@@ -170,19 +195,21 @@ Data Program Studi UNISYA.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| faculty_id | CHAR(36) | FK faculties.id, NOT NULL | Fakultas induk |
+| id | CHAR(26) | PK | **ULID** |
+| faculty_id | CHAR(26) | FK faculties.id, NOT NULL | Fakultas induk |
 | code | VARCHAR(20) | UNIQUE, NOT NULL | Kode program studi |
 | name | VARCHAR(255) | NOT NULL | Nama program studi |
-| degree_level | ENUM | NOT NULL | 'D3', 'S1', 'S2', 'S3', 'Profesi' |
+| degree_level | ENUM | NOT NULL | `'D3', 'S1', 'S2', 'S3', 'Profesi'` |
 | description | TEXT | NULL | Deskripsi |
 | is_active | TINYINT(1) | DEFAULT 1 | Status aktif |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_04_000005_create_study_programs_table.php`. File `2025_01_03_000002_create_study_programs_table.php` adalah duplikat lama dan harus dihapus.
 
 ---
 
@@ -195,16 +222,16 @@ Kategori profesi/bidang pekerjaan.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | name | VARCHAR(255) | NOT NULL | Nama kategori |
 | description | TEXT | NULL | Deskripsi |
 | is_active | TINYINT(1) | DEFAULT 1 | — |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
@@ -213,17 +240,17 @@ Data profesi spesifik dalam suatu kategori.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| profession_category_id | CHAR(36) | FK profession_categories.id, NOT NULL | Kategori induk |
+| id | CHAR(26) | PK | **ULID** |
+| profession_category_id | CHAR(26) | FK profession_categories.id, NOT NULL | Kategori induk |
 | name | VARCHAR(255) | NOT NULL | Nama profesi |
 | description | TEXT | NULL | Deskripsi |
 | is_active | TINYINT(1) | DEFAULT 1 | — |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
@@ -232,9 +259,9 @@ Data institusi/perusahaan pengguna alumni.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | name | VARCHAR(255) | NOT NULL | Nama institusi |
-| type | ENUM | NOT NULL | 'pemerintah', 'swasta', 'bumn', 'pendidikan', 'lainnya' |
+| type | ENUM | NOT NULL | `'pemerintah', 'swasta', 'bumn', 'pendidikan', 'lainnya'` |
 | sector | VARCHAR(255) | NULL | Sektor/bidang usaha |
 | website | VARCHAR(255) | NULL | URL website |
 | logo | VARCHAR(255) | NULL | Path logo |
@@ -242,9 +269,9 @@ Data institusi/perusahaan pengguna alumni.
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
@@ -253,8 +280,8 @@ Detail kontak dan lokasi institusi.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| institution_id | CHAR(36) | FK institutions.id, UNIQUE NOT NULL | Satu institusi satu detail |
+| id | CHAR(26) | PK | **ULID** |
+| institution_id | CHAR(26) | FK institutions.id, UNIQUE NOT NULL | Satu institusi satu detail |
 | address | TEXT | NULL | Alamat lengkap |
 | city | VARCHAR(100) | NULL | Kota |
 | province | VARCHAR(100) | NULL | Provinsi |
@@ -266,8 +293,8 @@ Detail kontak dan lokasi institusi.
 | contact_phone | VARCHAR(20) | NULL | HP PIC |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
@@ -280,12 +307,12 @@ Data lengkap alumni UNISYA.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| user_id | CHAR(36) | FK users.id, UNIQUE NULL | Akun user (nullable jika belum punya akun) |
-| study_program_id | CHAR(36) | FK study_programs.id, NOT NULL | Program studi |
+| id | CHAR(26) | PK | **ULID** |
+| user_id | CHAR(26) | FK users.id, UNIQUE NULL | Akun user (nullable jika belum punya akun) |
+| study_program_id | CHAR(26) | FK study_programs.id, NOT NULL | Program studi |
 | nim | VARCHAR(50) | UNIQUE, NOT NULL | Nomor Induk Mahasiswa |
 | name | VARCHAR(255) | NOT NULL | Nama lengkap |
-| gender | ENUM | NOT NULL | 'laki_laki', 'perempuan' |
+| gender | ENUM | NOT NULL | `'laki_laki', 'perempuan'` |
 | birth_place | VARCHAR(100) | NULL | Tempat lahir |
 | birth_date | DATE | NULL | Tanggal lahir |
 | address | TEXT | NULL | Alamat tinggal |
@@ -300,14 +327,14 @@ Data lengkap alumni UNISYA.
 | thesis_title | TEXT | NULL | Judul skripsi/tesis |
 | photo | VARCHAR(255) | NULL | Path foto |
 | is_employed | TINYINT(1) | DEFAULT 0 | Status bekerja saat ini |
-| employment_status | ENUM | NULL | 'bekerja', 'wirausaha', 'melanjutkan_studi', 'belum_bekerja' |
+| employment_status | ENUM | NULL | `'bekerja', 'wirausaha', 'melanjutkan_studi', 'belum_bekerja'` |
 | waiting_period_months | SMALLINT | NULL | Masa tunggu kerja (bulan) |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 **Indeks:** `nim` (UNIQUE), `user_id`, `study_program_id`, `graduation_year`, `employment_status`
 
@@ -318,48 +345,48 @@ Riwayat pekerjaan alumni (employment tracking).
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| alumni_id | CHAR(36) | FK alumni.id, NOT NULL | Alumni terkait |
-| institution_id | CHAR(36) | FK institutions.id, NULL | Institusi tempat bekerja |
-| profession_id | CHAR(36) | FK professions.id, NULL | Profesi/jabatan |
+| id | CHAR(26) | PK | **ULID** |
+| alumni_id | CHAR(26) | FK alumni.id, NOT NULL | Alumni terkait |
+| institution_id | CHAR(26) | FK institutions.id, NULL | Institusi tempat bekerja |
+| profession_id | CHAR(26) | FK professions.id, NULL | Profesi/jabatan |
 | job_title | VARCHAR(255) | NULL | Judul jabatan spesifik |
 | start_date | DATE | NOT NULL | Tanggal mulai bekerja |
 | end_date | DATE | NULL | Tanggal berakhir (null = saat ini) |
 | is_current | TINYINT(1) | DEFAULT 0 | Pekerjaan saat ini? |
-| salary_range | ENUM | NULL | '<1jt','1-3jt','3-5jt','5-10jt','>10jt' |
-| job_relevance | ENUM | NULL | 'sangat_relevan','relevan','kurang_relevan','tidak_relevan' |
+| salary_range | ENUM | NULL | `'<1jt','1-3jt','3-5jt','5-10jt','>10jt'` |
+| job_relevance | ENUM | NULL | `'sangat_relevan','relevan','kurang_relevan','tidak_relevan'` |
 | notes | TEXT | NULL | Catatan |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
 #### D3. `alumni_requests`
-Permohonan update data akademik oleh alumni (Alumni Request Management).
+Permohonan update data akademik oleh alumni.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| alumni_id | CHAR(36) | FK alumni.id, NOT NULL | Alumni pemohon |
-| type | ENUM | NOT NULL | 'update_akademik', 'update_profil', 'lainnya' |
+| id | CHAR(26) | PK | **ULID** |
+| alumni_id | CHAR(26) | FK alumni.id, NOT NULL | Alumni pemohon |
+| type | ENUM | NOT NULL | `'update_akademik', 'update_profil', 'lainnya'` |
 | field_name | VARCHAR(100) | NOT NULL | Field yang diminta diubah |
 | old_value | TEXT | NULL | Nilai lama |
 | new_value | TEXT | NOT NULL | Nilai baru yang diminta |
 | reason | TEXT | NULL | Alasan permohonan |
-| status | ENUM | DEFAULT 'menunggu' | 'menunggu', 'disetujui', 'ditolak' |
-| reviewed_by | CHAR(36) | NULL, FK users.id | Yang mereview |
+| status | ENUM | DEFAULT 'menunggu' | `'menunggu', 'disetujui', 'ditolak'` |
+| reviewed_by | CHAR(26) | NULL, FK users.id | Yang mereview |
 | reviewed_at | TIMESTAMP | NULL | Waktu review |
 | review_notes | TEXT | NULL | Catatan reviewer |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
@@ -372,34 +399,40 @@ Kategori/kelompok kuesioner.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | name | VARCHAR(255) | NOT NULL | Nama kategori |
 | description | TEXT | NULL | — |
 | is_active | TINYINT(1) | DEFAULT 1 | — |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_06_000001_create_questionnaire_categories_table.php`. File `2026_06_04_000014_create_questionnaire_categories_table.php` adalah skeleton UUID lama dan harus dihapus.
 
 ---
 
 #### E2. `answer_types`
 Tipe jawaban yang tersedia.
 
+> ⚠️ Tabel ini **tidak menggunakan SoftDeletes** (tidak ada `deleted_at`, `deleted_by`).
+
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| code | VARCHAR(50) | UNIQUE, NOT NULL | 'true_false', 'scale_1_5', 'scale_1_10' |
+| id | CHAR(26) | PK | **ULID** |
+| code | VARCHAR(50) | UNIQUE, NOT NULL | `'true_false', 'scale_1_5', 'scale_1_10'` |
 | name | VARCHAR(100) | NOT NULL | Nama tampilan |
 | description | TEXT | NULL | — |
 | config | JSON | NULL | Konfigurasi tipe (min, max, labels) |
 | is_active | TINYINT(1) | DEFAULT 1 | — |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_06_000002_create_answer_types_table.php`. File `2026_06_04_000015_create_answer_types_table.php` adalah skeleton UUID lama dan harus dihapus.
 
 ---
 
@@ -408,14 +441,14 @@ Master kuesioner.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| questionnaire_category_id | CHAR(36) | FK questionnaire_categories.id, NOT NULL | Kategori |
+| id | CHAR(26) | PK | **ULID** |
+| questionnaire_category_id | CHAR(26) | FK questionnaire_categories.id, NOT NULL | Kategori |
 | title | VARCHAR(255) | NOT NULL | Judul kuesioner |
 | description | TEXT | NULL | Deskripsi |
-| respondent_type | ENUM | NOT NULL | 'alumni', 'employer', 'both' |
-| scope | ENUM | NOT NULL | 'global', 'faculty', 'study_program' |
-| faculty_id | CHAR(36) | NULL, FK faculties.id | Jika scope = faculty |
-| study_program_id | CHAR(36) | NULL, FK study_programs.id | Jika scope = study_program |
+| respondent_type | ENUM | NOT NULL | `'alumni', 'employer', 'both'` |
+| scope | ENUM | NOT NULL | `'global', 'faculty', 'study_program'` |
+| faculty_id | CHAR(26) | NULL, FK faculties.id | Jika scope = faculty |
+| study_program_id | CHAR(26) | NULL, FK study_programs.id | Jika scope = study_program |
 | start_date | DATE | NULL | Tanggal aktif mulai |
 | end_date | DATE | NULL | Tanggal aktif berakhir |
 | is_active | TINYINT(1) | DEFAULT 1 | — |
@@ -423,9 +456,11 @@ Master kuesioner.
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_06_000003_create_questionnaires_table.php`. File `2026_06_04_000016_create_questionnaires_table.php` adalah skeleton UUID lama dan harus dihapus.
 
 ---
 
@@ -434,9 +469,9 @@ Pertanyaan dalam kuesioner.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| questionnaire_id | CHAR(36) | FK questionnaires.id, NOT NULL | Kuesioner induk |
-| answer_type_id | CHAR(36) | FK answer_types.id, NOT NULL | Tipe jawaban |
+| id | CHAR(26) | PK | **ULID** |
+| questionnaire_id | CHAR(26) | FK questionnaires.id, NOT NULL | Kuesioner induk |
+| answer_type_id | CHAR(26) | FK answer_types.id, NOT NULL | Tipe jawaban |
 | question_text | TEXT | NOT NULL | Teks pertanyaan |
 | question_order | SMALLINT | DEFAULT 0 | Urutan tampil |
 | is_required | TINYINT(1) | DEFAULT 1 | Wajib diisi? |
@@ -444,9 +479,11 @@ Pertanyaan dalam kuesioner.
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
+
+**Catatan migrasi:** File aktif adalah `2026_06_06_000004_create_questionnaire_questions_table.php`. File `2026_06_04_000017_create_questionnaire_questions_table.php` adalah skeleton UUID lama dan harus dihapus.
 
 ---
 
@@ -459,39 +496,40 @@ Sesi Tracer Study.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(26) | PK | **ULID** |
 | title | VARCHAR(255) | NOT NULL | Judul sesi |
 | description | TEXT | NULL | — |
 | academic_year | VARCHAR(20) | NOT NULL | Tahun akademik (2024/2025) |
 | start_date | DATE | NOT NULL | Tanggal mulai |
 | end_date | DATE | NOT NULL | Tanggal berakhir |
-| status | ENUM | DEFAULT 'draft' | 'draft', 'aktif', 'selesai', 'dibatalkan' |
-| target_scope | ENUM | DEFAULT 'all' | 'all', 'faculty', 'study_program' |
-| target_faculty_id | CHAR(36) | NULL, FK faculties.id | — |
-| target_study_program_id | CHAR(36) | NULL, FK study_programs.id | — |
+| status | ENUM | DEFAULT 'draft' | `'draft', 'aktif', 'selesai', 'dibatalkan'` |
+| target_scope | ENUM | DEFAULT 'all' | `'all', 'faculty', 'study_program'` |
+| target_faculty_id | CHAR(26) | NULL, FK faculties.id | — |
+| target_study_program_id | CHAR(26) | NULL, FK study_programs.id | — |
 | target_graduation_years | JSON | NULL | Array tahun lulus target |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
-| created_by | CHAR(36) | NULL, FK users.id | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
-| deleted_by | CHAR(36) | NULL, FK users.id | — |
+| created_by | CHAR(26) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
+| deleted_by | CHAR(26) | NULL, FK users.id | — |
 
 ---
 
 #### F2. `tracer_study_questionnaires`
 Pivot: kuesioner yang terlibat dalam suatu sesi tracer study.
 
+> ⚠️ Tabel pivot ini **tidak menggunakan SoftDeletes** dan **tidak memiliki audit fields** (created_by/updated_by).
+
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| tracer_study_id | CHAR(36) | FK tracer_studies.id, NOT NULL | Sesi tracer |
-| questionnaire_id | CHAR(36) | FK questionnaires.id, NOT NULL | Kuesioner |
+| tracer_study_id | CHAR(26) | FK tracer_studies.id, NOT NULL | Sesi tracer |
+| questionnaire_id | CHAR(26) | FK questionnaires.id, NOT NULL | Kuesioner |
 | order | SMALLINT | DEFAULT 0 | Urutan tampil |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 
-**UNIQUE:** (`tracer_study_id`, `questionnaire_id`)
+**PRIMARY KEY:** (`tracer_study_id`, `questionnaire_id`) — composite PK, tidak ada kolom `id` terpisah
 
 ---
 
@@ -500,12 +538,12 @@ Header respons kuesioner (satu baris per alumni/employer per kuesioner per sesi)
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| tracer_study_id | CHAR(36) | FK tracer_studies.id, NULL | Sesi tracer (null = diluar sesi) |
-| questionnaire_id | CHAR(36) | FK questionnaires.id, NOT NULL | Kuesioner yang diisi |
-| respondent_type | ENUM | NOT NULL | 'alumni', 'employer' |
-| alumni_id | CHAR(36) | NULL, FK alumni.id | Jika alumni |
-| employer_access_token_id | CHAR(36) | NULL, FK employer_access_tokens.id | Jika employer |
+| id | CHAR(26) | PK | **ULID** |
+| tracer_study_id | CHAR(26) | FK tracer_studies.id, NULL | Sesi tracer (null = diluar sesi) |
+| questionnaire_id | CHAR(26) | FK questionnaires.id, NOT NULL | Kuesioner yang diisi |
+| respondent_type | ENUM | NOT NULL | `'alumni', 'employer'` |
+| alumni_id | CHAR(26) | NULL, FK alumni.id | Jika alumni |
+| employer_access_token_id | CHAR(26) | NULL, FK employer_access_tokens.id | Jika employer |
 | submitted_at | TIMESTAMP | NOT NULL | Waktu submit |
 | ip_address | VARCHAR(45) | NULL | IP pengisi |
 | questionnaire_snapshot | JSON | NOT NULL | **SNAPSHOT** struktur kuesioner saat diisi |
@@ -523,8 +561,8 @@ Jawaban individual per pertanyaan (immutable setelah submit).
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| questionnaire_response_id | CHAR(36) | FK questionnaire_responses.id, NOT NULL | Header respons |
+| id | CHAR(26) | PK | **ULID** |
+| questionnaire_response_id | CHAR(26) | FK questionnaire_responses.id, NOT NULL | Header respons |
 | question_snapshot | JSON | NOT NULL | **SNAPSHOT** teks pertanyaan saat diisi |
 | answer_type_snapshot | JSON | NOT NULL | **SNAPSHOT** konfigurasi tipe jawaban |
 | answer_value | VARCHAR(255) | NOT NULL | Nilai jawaban |
@@ -540,18 +578,20 @@ Jawaban individual per pertanyaan (immutable setelah submit).
 ---
 
 #### G1. `notifications`
-Log notifikasi yang dikirim.
+Notifikasi in-app (Laravel default morphable notifications).
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
+| id | CHAR(36) | PK | **UUID** — standar Laravel Notification |
 | type | VARCHAR(255) | NOT NULL | Class notifikasi Laravel |
 | notifiable_type | VARCHAR(255) | NOT NULL | Polymorphic type |
-| notifiable_id | CHAR(36) | NOT NULL | Polymorphic ID |
+| notifiable_id | CHAR(26) | NOT NULL | **ULID** — ID model (users/alumni) |
 | data | JSON | NOT NULL | Isi notifikasi |
 | read_at | TIMESTAMP | NULL | Waktu dibaca |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
+
+> ⚠️ **Pengecualian:** PK menggunakan `CHAR(36) UUID` karena ini adalah tabel Laravel bawaan (`Illuminate\Notifications\DatabaseNotification`). Tidak dapat diubah ke ULID tanpa menimpa trait bawaan Laravel.
 
 ---
 
@@ -560,18 +600,18 @@ Log pengiriman WA dan Email untuk monitoring.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| channel | ENUM | NOT NULL | 'whatsapp', 'email' |
+| id | CHAR(26) | PK | **ULID** |
+| channel | ENUM | NOT NULL | `'whatsapp', 'email'` |
 | recipient | VARCHAR(255) | NOT NULL | Nomor WA atau email |
 | subject | VARCHAR(255) | NULL | Subjek (email) |
 | message | TEXT | NOT NULL | Isi pesan |
-| status | ENUM | DEFAULT 'pending' | 'pending', 'terkirim', 'gagal' |
+| status | ENUM | DEFAULT 'pending' | `'pending', 'terkirim', 'gagal'` |
 | provider_response | JSON | NULL | Respons API WA/SMTP |
 | error_message | TEXT | NULL | Pesan error jika gagal |
 | retries | TINYINT | DEFAULT 0 | Jumlah percobaan ulang |
 | sent_at | TIMESTAMP | NULL | Waktu terkirim |
 | reference_type | VARCHAR(100) | NULL | Polymorphic: model terkait |
-| reference_id | CHAR(36) | NULL | ID model terkait |
+| reference_id | CHAR(26) | NULL | **ULID** — ID model terkait |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
 
@@ -586,17 +626,17 @@ Konfigurasi sistem yang dapat diubah via UI.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| group | VARCHAR(100) | NOT NULL | Kelompok: 'general', 'wa_gateway', 'smtp', 'security' |
+| id | CHAR(26) | PK | **ULID** |
+| group | VARCHAR(100) | NOT NULL | `'general', 'wa_gateway', 'smtp', 'security', 'notification'` |
 | key | VARCHAR(100) | NOT NULL | Kunci setting |
 | value | TEXT | NULL | Nilai setting |
-| type | ENUM | DEFAULT 'string' | 'string', 'boolean', 'integer', 'json', 'password' |
+| type | ENUM | DEFAULT 'string' | `'string', 'boolean', 'integer', 'json', 'password'` |
 | label | VARCHAR(255) | NULL | Label tampilan UI |
 | description | TEXT | NULL | Keterangan |
 | is_encrypted | TINYINT(1) | DEFAULT 0 | Nilanya terenkripsi? |
 | created_at | TIMESTAMP | NULL | — |
 | updated_at | TIMESTAMP | NULL | — |
-| updated_by | CHAR(36) | NULL, FK users.id | — |
+| updated_by | CHAR(26) | NULL, FK users.id | — |
 
 **UNIQUE:** (`group`, `key`)
 
@@ -607,12 +647,12 @@ Mencatat setiap operasi CRUD pada data penting.
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| user_id | CHAR(36) | NULL, FK users.id | Pengguna yang melakukan aksi |
-| user_type | ENUM | NULL | 'user', 'employer', 'system' |
-| event | VARCHAR(50) | NOT NULL | 'created', 'updated', 'deleted', 'restored' |
+| id | CHAR(26) | PK | **ULID** |
+| user_id | CHAR(26) | NULL, FK users.id | Pengguna yang melakukan aksi |
+| user_type | ENUM | NULL | `'user', 'employer', 'system'` |
+| event | VARCHAR(50) | NOT NULL | `'created', 'updated', 'deleted', 'restored'` |
 | auditable_type | VARCHAR(255) | NOT NULL | Model yang diaudit |
-| auditable_id | CHAR(36) | NOT NULL | ID record yang diaudit |
+| auditable_id | CHAR(26) | NOT NULL | **ULID** — ID record yang diaudit |
 | old_values | JSON | NULL | Nilai sebelum perubahan |
 | new_values | JSON | NULL | Nilai setelah perubahan |
 | url | VARCHAR(1000) | NULL | URL request |
@@ -622,6 +662,8 @@ Mencatat setiap operasi CRUD pada data penting.
 
 **Indeks:** `user_id`, `auditable_type`, `auditable_id`, `event`, `created_at`
 
+**Catatan migrasi:** File aktif adalah `2026_06_04_000025_create_audit_trails_table.php`. File `2025_01_04_000001_create_audit_trails_table.php` adalah duplikat lama dan harus dihapus.
+
 ---
 
 #### H3. `activity_logs`
@@ -629,13 +671,13 @@ Log aktivitas pengguna (login, akses halaman, dll).
 
 | Kolom | Tipe | Constraint | Keterangan |
 |-------|------|-----------|------------|
-| id | CHAR(36) | PK | UUID |
-| user_id | CHAR(36) | NULL, FK users.id | — |
+| id | CHAR(26) | PK | **ULID** |
+| user_id | CHAR(26) | NULL, FK users.id | — |
 | description | TEXT | NOT NULL | Deskripsi aktivitas |
 | subject_type | VARCHAR(255) | NULL | Polymorphic: subject |
-| subject_id | CHAR(36) | NULL | — |
+| subject_id | CHAR(26) | NULL | **ULID** |
 | causer_type | VARCHAR(255) | NULL | Polymorphic: pelaku |
-| causer_id | CHAR(36) | NULL | — |
+| causer_id | CHAR(26) | NULL | **ULID** |
 | properties | JSON | NULL | Data tambahan |
 | ip_address | VARCHAR(45) | NULL | — |
 | created_at | TIMESTAMP | NULL | — |
@@ -643,16 +685,68 @@ Log aktivitas pengguna (login, akses halaman, dll).
 ---
 
 #### H4. `jobs` (Laravel Queue)
-Antrian pekerjaan background (standard Laravel).
+Antrian pekerjaan background.
 
-Standard Laravel jobs table — generated via `php artisan queue:table`.
+> Tabel standar Laravel — generated via `php artisan queue:table`. Tidak dimodifikasi.
 
 ---
 
-#### H5. `failed_jobs` (Laravel Queue)
-Pekerjaan yang gagal diproses.
+#### H5. `cache` & `sessions`
+Tabel bawaan Laravel untuk cache dan session.
 
-Standard Laravel failed_jobs table.
+> Tabel standar Laravel — tidak dimodifikasi.
+
+---
+
+## INVENTORY MIGRATION FILES
+
+### Status Migration Aktif
+
+| No | File Migration | Tabel | Status |
+|----|---------------|-------|--------|
+| 1 | `0001_01_01_000001_create_cache_table.php` | `cache`, `cache_locks` | ✅ Aktif (Laravel default) |
+| 2 | `0001_01_01_000002_create_jobs_table.php` | `jobs`, `job_batches`, `failed_jobs` | ✅ Aktif (Laravel default) |
+| 3 | `2026_06_04_000001_create_users_table.php` | `users` | ✅ Aktif |
+| 4 | `2026_06_04_000002_create_personal_access_tokens_table.php` | `personal_access_tokens` | ✅ Aktif |
+| 5 | `2026_06_04_000003_create_otp_verifications_table.php` | `otp_verifications` | ✅ Aktif |
+| 6 | `2026_06_04_000004_create_faculties_table.php` | `faculties` | ✅ Aktif |
+| 7 | `2026_06_04_000005_create_study_programs_table.php` | `study_programs` | ✅ Aktif |
+| 8 | `2026_06_04_000006_create_profession_categories_table.php` | `profession_categories` | ✅ Aktif |
+| 9 | `2026_06_04_000007_create_professions_table.php` | `professions` | ✅ Aktif |
+| 10 | `2026_06_04_000008_create_institutions_table.php` | `institutions` | ✅ Aktif |
+| 11 | `2026_06_04_000009_create_institution_details_table.php` | `institution_details` | ✅ Aktif |
+| 12 | `2026_06_04_000010_create_alumni_table.php` | `alumni` | ✅ Aktif |
+| 13 | `2026_06_04_000011_create_alumni_employment_histories_table.php` | `alumni_employment_histories` | ✅ Aktif |
+| 14 | `2026_06_04_000012_create_alumni_requests_table.php` | `alumni_requests` | ✅ Aktif |
+| 15 | `2026_06_04_000013_create_employer_access_tokens_table.php` | `employer_access_tokens` | ✅ Aktif |
+| 16 | `2026_06_04_000018_create_tracer_studies_table.php` | `tracer_studies` | ✅ Aktif |
+| 17 | `2026_06_04_000019_add_tracer_study_fk_to_employer_access_tokens.php` | FK pada `employer_access_tokens` | ✅ Aktif |
+| 18 | `2026_06_04_000019_create_tracer_study_questionnaires_table.php` | `tracer_study_questionnaires` | ⚠️ **DUPLIKAT NOMOR 000019** — perlu rename ke 000020 |
+| 19 | `2026_06_04_000020_create_questionnaire_responses_table.php` | `questionnaire_responses` | ⚠️ Perlu rename ke 000021 |
+| 20 | `2026_06_04_000021_create_questionnaire_answers_table.php` | `questionnaire_answers` | ⚠️ Perlu rename ke 000022 |
+| 21 | `2026_06_04_000022_create_notifications_table.php` | `notifications` | ⚠️ Perlu rename ke 000023 |
+| 22 | `2026_06_04_000023_create_notification_logs_table.php` | `notification_logs` | ⚠️ Perlu rename ke 000024 |
+| 23 | `2026_06_04_000024_create_app_settings_table.php` | `app_settings` | ⚠️ Perlu rename ke 000025 |
+| 24 | `2026_06_04_000025_create_audit_trails_table.php` | `audit_trails` | ⚠️ Perlu rename ke 000026 |
+| 25 | `2026_06_04_000026_create_activity_logs_table.php` | `activity_logs` | ⚠️ Perlu rename ke 000027 |
+| 26 | `2026_06_05_000001_fix_personal_access_tokens_tokenable_id_to_char36.php` | Alter `personal_access_tokens` | ✅ Aktif |
+| 27 | `2026_06_05_075238_create_sessions_table.php` | `sessions` | ✅ Aktif |
+| 28 | `2026_06_06_000001_create_questionnaire_categories_table.php` | `questionnaire_categories` | ✅ **AKTIF (ULID)** |
+| 29 | `2026_06_06_000002_create_answer_types_table.php` | `answer_types` | ✅ **AKTIF (ULID)** |
+| 30 | `2026_06_06_000003_create_questionnaires_table.php` | `questionnaires` | ✅ **AKTIF (ULID)** |
+| 31 | `2026_06_06_000004_create_questionnaire_questions_table.php` | `questionnaire_questions` | ✅ **AKTIF (ULID)** |
+
+### Migration yang HARUS DIHAPUS (Duplikat/Obsolete)
+
+| File | Alasan |
+|------|--------|
+| `2025_01_03_000001_create_faculties_table.php` | Duplikat — digantikan oleh `2026_06_04_000004` |
+| `2025_01_03_000002_create_study_programs_table.php` | Duplikat — digantikan oleh `2026_06_04_000005` |
+| `2025_01_04_000001_create_audit_trails_table.php` | Duplikat — digantikan oleh `2026_06_04_000025` |
+| `2026_06_04_000014_create_questionnaire_categories_table.php` | Skeleton UUID — digantikan oleh `2026_06_06_000001` |
+| `2026_06_04_000015_create_answer_types_table.php` | Skeleton UUID — digantikan oleh `2026_06_06_000002` |
+| `2026_06_04_000016_create_questionnaires_table.php` | Skeleton UUID — digantikan oleh `2026_06_06_000003` |
+| `2026_06_04_000017_create_questionnaire_questions_table.php` | Skeleton UUID — digantikan oleh `2026_06_06_000004` |
 
 ---
 
@@ -673,8 +767,8 @@ institutions ─────── employer_access_tokens (1:N)
 questionnaire_categories ─── questionnaires (1:N)
 questionnaires ───── questionnaire_questions (1:N)
 answer_types ─────── questionnaire_questions (1:N)
-tracer_studies ───── tracer_study_questionnaires (1:N)
-questionnaires ───── tracer_study_questionnaires (1:N)
+tracer_studies ───── tracer_study_questionnaires (N:N via pivot)
+questionnaires ───── tracer_study_questionnaires (N:N via pivot)
 tracer_studies ───── questionnaire_responses (1:N)
 questionnaires ───── questionnaire_responses (1:N)
 alumni ───────────── questionnaire_responses (1:N)
@@ -685,3 +779,4 @@ questionnaire_responses ─ questionnaire_answers (1:N)
 ---
 
 *Dokumen ini menjadi referensi migration database. Setiap perubahan skema harus dicatat di 09_CHANGELOG.md.*
+*Terakhir diperbarui: 2026-06-06 oleh Software Architect — koreksi PK/FK ke ULID CHAR(26).*
