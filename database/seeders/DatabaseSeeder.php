@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             FacultySeeder::class,
             StudyProgramSeeder::class,
+            ProfessionCategorySeeder::class,
+            ProfessionSeeder::class,
+            InstitutionSeeder::class,
         ]);
     }
 }

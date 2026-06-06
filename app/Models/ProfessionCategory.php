@@ -6,20 +6,17 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Institution extends Model
+class ProfessionCategory extends Model
 {
     use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'id',
         'name',
-        'type',
-        'sector',
-        'website',
-        'logo',
+        'description',
         'is_active',
         'created_by',
         'updated_by',
@@ -35,9 +32,9 @@ class Institution extends Model
 
     // ─── Relations ───────────────────────────────────────────────────────────
 
-    public function detail(): HasOne
+    public function professions(): HasMany
     {
-        return $this->hasOne(InstitutionDetail::class, 'institution_id');
+        return $this->hasMany(Profession::class, 'profession_category_id');
     }
 
     public function creator(): BelongsTo
